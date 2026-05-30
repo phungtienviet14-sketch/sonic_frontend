@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { renderChildMenu } from './childMenu.js';
-import { buildCheckboxGroup, buildSelect, getCheckedValues, refreshBlockedTags } from '../utils.js';
+import { buildCheckboxGroup, buildSelect, getCheckedValues, refreshBlockedTags, showToast } from '../utils.js';
 
 export async function renderConfig() {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải cấu hình...</p>`;
@@ -280,7 +280,6 @@ export async function renderConfig() {
                     document.getElementById('math_word_problems').checked = false;
                     document.getElementById('encouragement_level').value = 'high';
                     document.getElementById('language_ratio').value = 'vi_primary';
-                    document.getElementById('en_instruction').value = 'Hãy kết hợp kể chuyện và trò chơi, khen bé thật nhiều';
                 } else if (preset === 'tieu_chuan') {
                     document.getElementById('personality').value = 'patient';
                     document.getElementById('en_level').value = 'elementary';
@@ -290,7 +289,6 @@ export async function renderConfig() {
                     document.getElementById('math_word_problems').checked = true;
                     document.getElementById('encouragement_level').value = 'medium';
                     document.getElementById('language_ratio').value = 'balanced';
-                    document.getElementById('en_instruction').value = '';
                 } else if (preset === 'nang_cao') {
                     document.getElementById('personality').value = 'strict';
                     document.getElementById('en_level').value = 'intermediate';
@@ -300,9 +298,17 @@ export async function renderConfig() {
                     document.getElementById('math_word_problems').checked = true;
                     document.getElementById('encouragement_level').value = 'low';
                     document.getElementById('language_ratio').value = 'en_primary';
-                    document.getElementById('en_instruction').value = 'Chỉ dùng tiếng Anh khi giảng bài Tiếng Anh';
                 }
-                alert(`Đã áp dụng mẫu: ${card.querySelector('strong').innerText}. Bạn hãy bấm "Lưu cấu hình" ở dưới cùng nhé.`);
+                const changedIds = ['personality', 'en_level', 'en_difficulty', 'math_level', 'math_difficulty', 'encouragement_level', 'language_ratio'];
+                changedIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.remove('highlight-change');
+                        void el.offsetWidth;
+                        el.classList.add('highlight-change');
+                    }
+                });
+                showToast(`Đã áp dụng mẫu: ${card.querySelector('strong').innerText}. Kéo xuống bấm Lưu để xác nhận.`);
             });
         });
 

@@ -27,3 +27,24 @@ export function refreshBlockedTags() {
     const wrapper = document.getElementById('tagsWrapper');
     wrapper.innerHTML = state.blockedTopicsTags.map(t => `<span class="tag-pill">${t}<button type="button" class="tag-remove" data-tag="${t}">&times;</button></span>`).join('');
 }
+
+export function showToast(message, type = 'success') {
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.className = 'toast';
+    toast.innerHTML = type === 'success' ? `✅ ${message}` : `ℹ️ ${message}`;
+    
+    // Trigger reflow
+    void toast.offsetWidth;
+    
+    toast.classList.add('show');
+    
+    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+    window.toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}

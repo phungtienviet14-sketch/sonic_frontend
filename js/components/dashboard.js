@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { state } from '../state.js';
 import { renderLogin, appElement } from './auth.js';
 import { renderChildMenu } from './childMenu.js';
+import { showToast } from '../utils.js';
 
 export async function renderDashboard() {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải dữ liệu...</p>`;
@@ -9,10 +10,22 @@ export async function renderDashboard() {
         state.childrenList = await api.getChildren();
         
         let childrenHTML = state.childrenList.map(child => `
-            <div class="glass-panel child-card" data-id="${child.user_id}">
-                <div class="flex-between">
-                    <h3>👶 ${child.full_name}</h3>
-                    <span style="color: var(--primary); font-weight: bold;">${child.age} tuổi</span>
+            <div class="glass-panel child-card" data-id="${child.user_id}" style="cursor: pointer; padding: 16px; display: flex; align-items: center; gap: 15px; transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 12px;">
+                <div class="avatar" style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: bold; flex-shrink: 0; box-shadow: 0 4px 10px rgba(255, 123, 84, 0.3);">
+                    ${child.full_name.charAt(0).toUpperCase()}
+                </div>
+                <div style="flex-grow: 1;">
+                    <h3 style="margin: 0; font-size: 1.2rem; color: var(--text-dark);">${child.full_name}</h3>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                        <span style="background: rgba(147, 155, 98, 0.2); color: var(--accent); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">${child.age} tuổi</span>
+                        <span class="copy-id-btn" data-id="${child.user_id}" title="Copy ID của bé" style="color: var(--text-light); font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            Copy ID
+                        </span>
+                    </div>
+                </div>
+                <div style="color: var(--primary); opacity: 0.5;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
             </div>
         `).join('');
@@ -77,7 +90,16 @@ export async function renderDashboard() {
         document.getElementById('addChildBtn').addEventListener('click', renderAddChildForm);
 
         document.querySelectorAll('.child-card').forEach(card => {
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.copy-id-btn')) {
+                    const id = e.target.closest('.copy-id-btn').getAttribute('data-id');
+                    navigator.clipboard.writeText(id).then(() => {
+                        showToast('Đã copy ID: ' + id);
+                    }).catch(err => {
+                        showToast('Không thể copy ID', 'error');
+                    });
+                    return;
+                }
                 const id = card.getAttribute('data-id');
                 state.currentChild = state.childrenList.find(c => c.user_id === id);
                 renderChildMenu();
