@@ -13,6 +13,12 @@ export async function renderReport() {
         const mathLvl = report.math?.level_info?.current_level || 'Chưa học';
         const mathXp = report.math?.level_info?.total_xp || 0;
 
+        const engBadges = report.english?.level_info?.badges || [];
+        const engBadgesHTML = engBadges.length > 0 ? `<p style="margin-top: 5px;">Huy hiệu: <span style="font-size: 1.1em;">${engBadges.join(' ')}</span></p>` : '';
+
+        const mathBadges = report.math?.level_info?.badges || [];
+        const mathBadgesHTML = mathBadges.length > 0 ? `<p style="margin-top: 5px;">Huy hiệu: <span style="font-size: 1.1em;">${mathBadges.join(' ')}</span></p>` : '';
+
         // Sử dụng recent_activities thay vì history
         const engHistory = report.english?.recent_activities?.slice(0,3) || [];
         const mathHistory = report.math?.recent_activities?.slice(0,3) || [];
@@ -41,6 +47,7 @@ export async function renderReport() {
                     <h3 style="color: #3b82f6;">Tiếng Anh</h3>
                     <p>Cấp độ: <strong>${engLvl.toUpperCase()}</strong></p>
                     <p>Kinh nghiệm: <strong>${engXp} XP</strong></p>
+                    ${engBadgesHTML}
                     <div style="font-size: 0.9em; margin-top: 10px;">
                         ${engHistoryHTML}
                     </div>
@@ -50,6 +57,7 @@ export async function renderReport() {
                     <h3 style="color: #10b981;">Toán Học</h3>
                     <p>Cấp độ: <strong>${mathLvl.toUpperCase()}</strong></p>
                     <p>Kinh nghiệm: <strong>${mathXp} XP</strong></p>
+                    ${mathBadgesHTML}
                     <div style="font-size: 0.9em; margin-top: 10px;">
                         ${mathHistoryHTML}
                     </div>

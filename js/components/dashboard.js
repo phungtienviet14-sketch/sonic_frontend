@@ -23,6 +23,7 @@ export async function renderDashboard() {
                             Copy ID
                         </span>
                     </div>
+                    ${child.weak_points ? `<div style="font-size: 0.8rem; color: #ef4444; margin-top: 6px; background: rgba(239, 68, 68, 0.1); padding: 4px 8px; border-radius: 4px;"><strong>Cần ôn tập:</strong> ${child.weak_points}</div>` : ''}
                 </div>
                 <div style="color: var(--primary); opacity: 0.5;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
