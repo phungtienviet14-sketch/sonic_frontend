@@ -18,12 +18,16 @@
     padding: 0;
 }
 
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
 body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-dark);
     min-height: 100vh;
-    overflow-x: hidden;
     position: relative;
     -webkit-font-smoothing: antialiased;
 }
