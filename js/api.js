@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000/api/parents';
+const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:8000') + '/api/parents';
 
 export const api = {
     async request(endpoint, options = {}) {
