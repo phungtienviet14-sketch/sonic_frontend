@@ -7,6 +7,7 @@ const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || '';
 const FACEBOOK_APP_ID = import.meta.env?.VITE_FACEBOOK_APP_ID || '';
 const FACEBOOK_GRAPH_VERSION = import.meta.env?.VITE_FACEBOOK_GRAPH_VERSION || 'v20.0';
 const FACEBOOK_CALLBACK_PATH = '/facebook-callback.html';
+const FACEBOOK_REDIRECT_ORIGIN = import.meta.env?.VITE_FACEBOOK_REDIRECT_ORIGIN || '';
 
 let googleScriptPromise = null;
 
@@ -87,7 +88,9 @@ function loginWithFacebook(event) {
         return;
     }
 
-    const redirectUri = new URL(FACEBOOK_CALLBACK_PATH, window.location.origin).href;
+    const currentOrigin = window.location.origin.replace('127.0.0.1', 'localhost');
+    const redirectOrigin = FACEBOOK_REDIRECT_ORIGIN || currentOrigin;
+    const redirectUri = new URL(FACEBOOK_CALLBACK_PATH, redirectOrigin).href;
     const state = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
     sessionStorage.setItem('facebook_oauth_state', state);
 

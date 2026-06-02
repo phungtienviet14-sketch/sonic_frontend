@@ -39,7 +39,7 @@
             };
 
             if (window.opener && !window.opener.closed) {
-                window.opener.postMessage(payload, window.location.origin);
+                window.opener.postMessage(payload, '*');
             }
             window.setTimeout(function () {
                 window.close();
