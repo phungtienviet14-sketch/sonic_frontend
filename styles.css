@@ -178,15 +178,23 @@ input:focus, select:focus, textarea:focus {
 .btn-social {
     background: #1877f2;
     color: white;
-    margin-top: 10px;
+    width: 100%;
+    max-width: 340px;
+    min-height: 42px;
+    margin: 0 auto;
+    padding: 0 16px;
+    border-radius: 4px;
     position: relative;
     z-index: 2;
     pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.btn-social[aria-busy="true"] {
+.btn-social:disabled {
     opacity: 0.7;
-    cursor: pointer;
+    cursor: wait;
 }
 
 .auth-tabs {
@@ -239,12 +247,30 @@ input:focus, select:focus, textarea:focus {
     gap: 10px;
     position: relative;
     isolation: isolate;
+    justify-items: center;
+}
+
+.social-button-frame {
+    width: 100%;
+    max-width: 340px;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #googleButton {
+    width: 100%;
+    min-height: 42px;
     position: relative;
     z-index: 1;
     overflow: hidden;
+}
+
+#googleButton > div,
+#googleButton iframe {
+    width: 100% !important;
+    max-width: 340px !important;
 }
 
 #facebookLoginBtn {
