@@ -19,7 +19,7 @@ export const api = {
         try {
             const response = await fetch(`${API_BASE}${endpoint}`, config);
             const data = await response.json();
-            
+
             if (!response.ok) {
                 if (response.status === 401) {
                     localStorage.removeItem('token');
@@ -38,6 +38,20 @@ export const api = {
         return this.request('/login', {
             method: 'POST',
             body: JSON.stringify({ email, password })
+        });
+    },
+
+    register(parentData) {
+        return this.request('/register', {
+            method: 'POST',
+            body: JSON.stringify(parentData)
+        });
+    },
+
+    socialLogin(provider, token) {
+        return this.request('/social-login', {
+            method: 'POST',
+            body: JSON.stringify({ provider, token })
         });
     },
 

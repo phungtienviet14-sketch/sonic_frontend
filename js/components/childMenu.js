@@ -11,12 +11,12 @@ export function renderChildMenu() {
             <button id="backBtn" class="btn btn-outline" style="padding: 6px 12px; width: auto; font-size: 0.8em; border-radius: 8px;">Trở lại</button>
         </div>
         <div class="glass-panel child-card" id="btnReport">
-            <h3>📊 Xem báo cáo học tập</h3>
-            <p style="margin:0">Theo dõi tiến độ Toán & Tiếng Anh</p>
+            <h3>Xem báo cáo học tập</h3>
+            <p style="margin:0">Theo dõi tiến độ Toán và Tiếng Anh</p>
         </div>
         <div class="glass-panel child-card" id="btnConfig">
-            <h3>⚙️ Tùy chỉnh giáo trình AI</h3>
-            <p style="margin:0">Cài đặt cách Robot dạy bé</p>
+            <h3>Tùy chỉnh giáo trình AI</h3>
+            <p style="margin:0">Cài đặt cách robot dạy bé</p>
         </div>
     `;
 

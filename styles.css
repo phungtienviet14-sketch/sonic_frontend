@@ -175,6 +175,68 @@ input:focus, select:focus, textarea:focus {
     border: 2px solid var(--primary);
 }
 
+.btn-social {
+    background: #1877f2;
+    color: white;
+    margin-top: 10px;
+}
+
+.auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.auth-tab {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.7);
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.auth-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.auth-error {
+    color: var(--danger);
+    margin-bottom: 10px;
+    font-size: 0.9em;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-light);
+    font-size: 0.85rem;
+    margin: 18px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: rgba(0,0,0,0.08);
+}
+
+.social-login {
+    display: grid;
+    gap: 10px;
+}
+
+.social-note {
+    text-align: center;
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+
 /* Utilities */
 .hidden { display: none !important; }
 .text-center { text-align: center; }

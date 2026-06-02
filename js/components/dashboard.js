@@ -8,7 +8,7 @@ export async function renderDashboard() {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải dữ liệu...</p>`;
     try {
         state.childrenList = await api.getChildren();
-        
+
         let childrenHTML = state.childrenList.map(child => `
             <div class="glass-panel child-card" data-id="${child.user_id}" style="cursor: pointer; padding: 16px; display: flex; align-items: center; gap: 15px; transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 12px;">
                 <div class="avatar" style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: bold; flex-shrink: 0; box-shadow: 0 4px 10px rgba(255, 123, 84, 0.3);">
@@ -75,7 +75,7 @@ export async function renderDashboard() {
                     allActs.slice(0, 3).forEach(a => {
                         notis.push(`🎉 <b>${child.full_name}</b> đạt ${a.score}đ môn ${a.activity_type || 'học'}`);
                     });
-                } catch(e) {}
+                } catch (e) {}
             }
             const notiList = document.getElementById('notiList');
             const notiBadge = document.getElementById('notiBadge');
@@ -96,7 +96,7 @@ export async function renderDashboard() {
                     const id = e.target.closest('.copy-id-btn').getAttribute('data-id');
                     navigator.clipboard.writeText(id).then(() => {
                         showToast('Đã copy ID: ' + id);
-                    }).catch(err => {
+                    }).catch(() => {
                         showToast('Không thể copy ID', 'error');
                     });
                     return;
@@ -115,7 +115,7 @@ export async function renderDashboard() {
 export function renderAddChildForm() {
     appElement.innerHTML = `
         <div class="flex-between mb-2">
-            <h2>Thêm Bé Mới</h2>
+            <h2>Thêm bé mới</h2>
             <button id="backBtn" class="btn btn-outline" style="padding: 6px 12px; width: auto; font-size: 0.8em; border-radius: 8px;">Trở lại</button>
         </div>
         <form id="addChildForm">

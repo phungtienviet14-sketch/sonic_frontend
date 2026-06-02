@@ -9,10 +9,8 @@ export async function renderConfig() {
     try {
         const config = await api.getTeachingConfig(state.currentChild.user_id);
 
-        // Khởi tạo state cho blocked topics
         state.blockedTopicsTags = Array.isArray(config.topics_blocked) ? [...config.topics_blocked] : [];
 
-        // --- Dữ liệu dropdown & checkbox ---
         const englishLevelOptions = [
             { value: 'auto', label: 'Tự động' },
             { value: 'beginner', label: 'Mới bắt đầu' },
@@ -20,23 +18,23 @@ export async function renderConfig() {
             { value: 'intermediate', label: 'Trung cấp' }
         ];
         const englishTopicOptions = [
-            { value: 'animals', label: '🐾 Động vật' },
-            { value: 'colors', label: '🎨 Màu sắc' },
-            { value: 'fruits', label: '🍎 Trái cây' },
-            { value: 'family', label: '👨‍👩‍👧 Gia đình' },
-            { value: 'body', label: '🦵 Cơ thể' },
-            { value: 'school', label: '🏫 Trường học' },
-            { value: 'weather', label: '🌤️ Thời tiết' },
-            { value: 'food', label: '🍕 Thức ăn' },
-            { value: 'transport', label: '🚗 Phương tiện' },
-            { value: 'clothing', label: '👕 Quần áo' }
+            { value: 'animals', label: 'Động vật' },
+            { value: 'colors', label: 'Màu sắc' },
+            { value: 'fruits', label: 'Trái cây' },
+            { value: 'family', label: 'Gia đình' },
+            { value: 'body', label: 'Cơ thể' },
+            { value: 'school', label: 'Trường học' },
+            { value: 'weather', label: 'Thời tiết' },
+            { value: 'food', label: 'Thức ăn' },
+            { value: 'transport', label: 'Phương tiện' },
+            { value: 'clothing', label: 'Quần áo' }
         ];
         const englishMethodOptions = [
-            { value: 'vocabulary', label: '📖 Từ vựng' },
-            { value: 'game', label: '🎮 Trò chơi' },
-            { value: 'story', label: '📚 Câu chuyện' },
-            { value: 'song', label: '🎵 Bài hát' },
-            { value: 'conversation', label: '💬 Hội thoại' }
+            { value: 'vocabulary', label: 'Từ vựng' },
+            { value: 'game', label: 'Trò chơi' },
+            { value: 'story', label: 'Câu chuyện' },
+            { value: 'song', label: 'Bài hát' },
+            { value: 'conversation', label: 'Hội thoại' }
         ];
         const difficultyOptions = [
             { value: 'easy', label: 'Dễ' },
@@ -45,15 +43,15 @@ export async function renderConfig() {
         ];
         const mathLevelOptions = [
             { value: 'auto', label: 'Tự động' },
-            { value: 'grade1', label: 'Lớp 1' },
-            { value: 'grade2', label: 'Lớp 2' },
-            { value: 'grade3', label: 'Lớp 3' }
+            { value: 'beginner', label: 'Mới bắt đầu' },
+            { value: 'elementary', label: 'Sơ cấp' },
+            { value: 'intermediate', label: 'Trung cấp' }
         ];
         const mathOperationOptions = [
-            { value: 'add', label: '➕ Cộng' },
-            { value: 'subtract', label: '➖ Trừ' },
-            { value: 'multiply', label: '✖️ Nhân' },
-            { value: 'divide', label: '➗ Chia' }
+            { value: 'add', label: 'Cộng' },
+            { value: 'subtract', label: 'Trừ' },
+            { value: 'multiply', label: 'Nhân' },
+            { value: 'divide', label: 'Chia' }
         ];
         const encouragementOptions = [
             { value: 'high', label: 'Khen nhiều' },
@@ -66,81 +64,70 @@ export async function renderConfig() {
             { value: 'balanced', label: 'Cân bằng' }
         ];
 
-        // Lịch học hiện tại
-        const studySchedule = config.study_schedule || { days: [], time: "19:00" };
+        const studySchedule = config.study_schedule || { days: [], time: '19:00' };
         const scheduleDays = studySchedule.days || [];
-        const scheduleTime = studySchedule.time || "19:00";
-
-        // Giá trị hiện tại từ config
+        const scheduleTime = studySchedule.time || '19:00';
         const enTopics = config.english_topics || [];
         const enMethods = config.english_methods || [];
         const mathOps = config.math_operations || [];
-
-        // Render blocked topics tags
         const blockedTagsHTML = state.blockedTopicsTags.map(t => `<span class="tag-pill">${t}<button type="button" class="tag-remove" data-tag="${t}">&times;</button></span>`).join('');
 
         appElement.innerHTML = `
             <div class="flex-between mb-2">
-                <h2>Cấu Hình AI</h2>
+                <h2>Cấu hình AI</h2>
                 <button id="backMenuBtn" class="btn btn-outline" style="padding: 6px 12px; width: auto; font-size: 0.8em; border-radius: 8px;">Trở lại</button>
             </div>
 
-            <!-- Gói Giáo Trình Mẫu -->
             <div class="glass-panel mb-2">
-                <h3 style="margin-bottom: 10px;">📦 Gói Giáo Trình Mẫu</h3>
+                <h3 style="margin-bottom: 10px;">Gói giáo trình mẫu</h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                     <div class="preset-card" data-preset="mam_non" style="padding: 10px; background: rgba(255,255,255,0.4); border-radius: 8px; cursor: pointer; text-align: center; border: 1px solid rgba(255,255,255,0.6);">
-                        <div style="font-size: 24px;">🐣</div>
                         <strong>Mầm non</strong>
                         <div style="font-size: 0.8em; color: var(--text-light)">Dễ, vui nhộn</div>
                     </div>
                     <div class="preset-card" data-preset="tieu_chuan" style="padding: 10px; background: rgba(255,255,255,0.4); border-radius: 8px; cursor: pointer; text-align: center; border: 1px solid rgba(255,255,255,0.6);">
-                        <div style="font-size: 24px;">⚖️</div>
                         <strong>Tiêu chuẩn</strong>
                         <div style="font-size: 0.8em; color: var(--text-light)">Cân bằng</div>
                     </div>
                     <div class="preset-card" data-preset="nang_cao" style="padding: 10px; background: rgba(255,255,255,0.4); border-radius: 8px; cursor: pointer; text-align: center; border: 1px solid rgba(255,255,255,0.6);">
-                        <div style="font-size: 24px;">🚀</div>
                         <strong>Nâng cao</strong>
-                        <div style="font-size: 0.8em; color: var(--text-light)">Nghiêm túc, Khó</div>
+                        <div style="font-size: 0.8em; color: var(--text-light)">Nghiêm túc, khó</div>
                     </div>
                 </div>
             </div>
 
             <form id="configForm">
-
-                <!-- ===== TÍNH CÁCH & THỜI GIAN ===== -->
                 <div class="glass-panel">
-                    <h3>🤖 Tính cách Robot</h3>
+                    <h3>Tính cách robot</h3>
                     <div class="form-group">
                         <select id="personality">
-                            <option value="playful" ${config.personality==='playful'?'selected':''}>Vui nhộn, thân thiện</option>
-                            <option value="patient" ${config.personality==='patient'?'selected':''}>Kiên nhẫn, nhẹ nhàng</option>
-                            <option value="strict" ${config.personality==='strict'?'selected':''}>Nghiêm khắc, học thuật</option>
+                            <option value="playful" ${config.personality === 'playful' ? 'selected' : ''}>Vui nhộn, thân thiện</option>
+                            <option value="patient" ${config.personality === 'patient' ? 'selected' : ''}>Kiên nhẫn, nhẹ nhàng</option>
+                            <option value="strict" ${config.personality === 'strict' ? 'selected' : ''}>Nghiêm khắc, học thuật</option>
                         </select>
                     </div>
-                    
+
                     <div class="section-divider"></div>
 
-                    <h3>⏱️ Giới hạn thời gian</h3>
+                    <h3>Giới hạn thời gian</h3>
                     <div class="form-group">
-                        <label for="daily_limit">Số phút/ngày</label>
+                        <label for="daily_limit">Số phút mỗi ngày</label>
                         <input type="number" id="daily_limit" value="${config.daily_limit_minutes || 30}" placeholder="Phút/ngày" min="5" max="120">
                     </div>
 
                     <div class="section-divider"></div>
 
-                    <h3>📅 Lịch học chủ động</h3>
+                    <h3>Lịch học chủ động</h3>
                     <div class="form-group">
                         <label>Chọn ngày học trong tuần</label>
                         <div class="checkbox-grid">
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Mon" ${scheduleDays.includes('Mon')?'checked':''}><span>T2</span></label>
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Tue" ${scheduleDays.includes('Tue')?'checked':''}><span>T3</span></label>
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Wed" ${scheduleDays.includes('Wed')?'checked':''}><span>T4</span></label>
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Thu" ${scheduleDays.includes('Thu')?'checked':''}><span>T5</span></label>
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Fri" ${scheduleDays.includes('Fri')?'checked':''}><span>T6</span></label>
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Sat" ${scheduleDays.includes('Sat')?'checked':''}><span>T7</span></label>
-                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Sun" ${scheduleDays.includes('Sun')?'checked':''}><span>CN</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Mon" ${scheduleDays.includes('Mon') ? 'checked' : ''}><span>T2</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Tue" ${scheduleDays.includes('Tue') ? 'checked' : ''}><span>T3</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Wed" ${scheduleDays.includes('Wed') ? 'checked' : ''}><span>T4</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Thu" ${scheduleDays.includes('Thu') ? 'checked' : ''}><span>T5</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Fri" ${scheduleDays.includes('Fri') ? 'checked' : ''}><span>T6</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Sat" ${scheduleDays.includes('Sat') ? 'checked' : ''}><span>T7</span></label>
+                            <label class="checkbox-pill"><input type="checkbox" name="schedule_days" value="Sun" ${scheduleDays.includes('Sun') ? 'checked' : ''}><span>CN</span></label>
                         </div>
                     </div>
                     <div class="form-group">
@@ -149,9 +136,8 @@ export async function renderConfig() {
                     </div>
                 </div>
 
-                <!-- ===== MÔN TIẾNG ANH ===== -->
                 <div class="glass-panel">
-                    <h3>🇬🇧 Môn Tiếng Anh</h3>
+                    <h3>Môn Tiếng Anh</h3>
                     <label class="toggle-label">
                         Kích hoạt Tiếng Anh
                         <input type="checkbox" id="en_enabled" ${config.english_enabled ? 'checked' : ''}>
@@ -192,9 +178,8 @@ export async function renderConfig() {
                     </div>
                 </div>
 
-                <!-- ===== MÔN TOÁN HỌC ===== -->
                 <div class="glass-panel">
-                    <h3>🔢 Môn Toán Học</h3>
+                    <h3>Môn Toán học</h3>
                     <label class="toggle-label">
                         Kích hoạt Toán
                         <input type="checkbox" id="math_enabled" ${config.math_enabled ? 'checked' : ''}>
@@ -226,13 +211,12 @@ export async function renderConfig() {
 
                     <div class="form-group">
                         <label for="math_instruction">Hướng dẫn riêng cho môn Toán</label>
-                        <textarea id="math_instruction" rows="2" placeholder="VD: Ra đề về siêu nhân">${config.math_custom_instructions || ''}</textarea>
+                        <textarea id="math_instruction" rows="2" placeholder="VD: Ra đề về đồ chơi bé thích">${config.math_custom_instructions || ''}</textarea>
                     </div>
                 </div>
 
-                <!-- ===== CÀI ĐẶT CHUNG ===== -->
                 <div class="glass-panel">
-                    <h3>🎯 Cài Đặt Chung</h3>
+                    <h3>Cài đặt chung</h3>
 
                     <div class="form-group">
                         <label>Mức độ khuyến khích</label>
@@ -254,20 +238,16 @@ export async function renderConfig() {
                             </div>
                             <input type="text" id="blockedTopicInput" placeholder="Nhập chủ đề rồi nhấn Enter..." class="tag-text-input">
                         </div>
-                        <p style="font-size: 0.8em; color: var(--text-light); margin-top: 6px;">Nhấn Enter để thêm. Nhấn × để xoá.</p>
+                        <p style="font-size: 0.8em; color: var(--text-light); margin-top: 6px;">Nhấn Enter để thêm. Nhấn x để xóa.</p>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary mb-2" id="saveConfigBtn">💾 Lưu Cấu Hình</button>
+                <button type="submit" class="btn btn-primary mb-2" id="saveConfigBtn">Lưu cấu hình</button>
             </form>
         `;
 
-        // --- Event Listeners ---
-
-        // Nút trở lại
         document.getElementById('backMenuBtn').addEventListener('click', renderChildMenu);
 
-        // Preset cards
         document.querySelectorAll('.preset-card').forEach(card => {
             card.addEventListener('click', () => {
                 const preset = card.getAttribute('data-preset');
@@ -275,7 +255,7 @@ export async function renderConfig() {
                     document.getElementById('personality').value = 'playful';
                     document.getElementById('en_level').value = 'beginner';
                     document.getElementById('en_difficulty').value = 'easy';
-                    document.getElementById('math_level').value = 'grade1';
+                    document.getElementById('math_level').value = 'beginner';
                     document.getElementById('math_difficulty').value = 'easy';
                     document.getElementById('math_word_problems').checked = false;
                     document.getElementById('encouragement_level').value = 'high';
@@ -284,7 +264,7 @@ export async function renderConfig() {
                     document.getElementById('personality').value = 'patient';
                     document.getElementById('en_level').value = 'elementary';
                     document.getElementById('en_difficulty').value = 'medium';
-                    document.getElementById('math_level').value = 'grade2';
+                    document.getElementById('math_level').value = 'elementary';
                     document.getElementById('math_difficulty').value = 'medium';
                     document.getElementById('math_word_problems').checked = true;
                     document.getElementById('encouragement_level').value = 'medium';
@@ -293,7 +273,7 @@ export async function renderConfig() {
                     document.getElementById('personality').value = 'strict';
                     document.getElementById('en_level').value = 'intermediate';
                     document.getElementById('en_difficulty').value = 'hard';
-                    document.getElementById('math_level').value = 'grade3';
+                    document.getElementById('math_level').value = 'intermediate';
                     document.getElementById('math_difficulty').value = 'hard';
                     document.getElementById('math_word_problems').checked = true;
                     document.getElementById('encouragement_level').value = 'low';
@@ -312,7 +292,6 @@ export async function renderConfig() {
             });
         });
 
-        // Tag input cho topics_blocked
         const tagInput = document.getElementById('blockedTopicInput');
         tagInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -326,7 +305,6 @@ export async function renderConfig() {
             }
         });
 
-        // Delegate click cho nút xoá tag
         document.getElementById('tagsWrapper').addEventListener('click', (e) => {
             if (e.target.classList.contains('tag-remove')) {
                 const tag = e.target.getAttribute('data-tag');
@@ -335,26 +313,19 @@ export async function renderConfig() {
             }
         });
 
-        // Submit form
         document.getElementById('configForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('saveConfigBtn');
             btn.innerText = 'Đang lưu...';
             btn.disabled = true;
 
-            // Thu thập checkbox groups
-            const getCheckedValues = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
-
             const updatedConfig = {
-                // Tính cách & thời gian
                 personality: document.getElementById('personality').value,
                 daily_limit_minutes: parseInt(document.getElementById('daily_limit').value) || 30,
                 study_schedule: {
                     days: getCheckedValues('schedule_days'),
                     time: document.getElementById('schedule_time').value
                 },
-
-                // Tiếng Anh
                 english_enabled: document.getElementById('en_enabled').checked,
                 english_level: document.getElementById('en_level').value,
                 english_topics: getCheckedValues('en_topics'),
@@ -362,16 +333,12 @@ export async function renderConfig() {
                 english_words_per_session: parseInt(document.getElementById('en_words_per_session').value) || 5,
                 english_difficulty: document.getElementById('en_difficulty').value,
                 english_custom_instructions: document.getElementById('en_instruction').value,
-
-                // Toán
                 math_enabled: document.getElementById('math_enabled').checked,
                 math_level: document.getElementById('math_level').value,
                 math_operations: getCheckedValues('math_ops'),
                 math_difficulty: document.getElementById('math_difficulty').value,
                 math_word_problems: document.getElementById('math_word_problems').checked,
                 math_custom_instructions: document.getElementById('math_instruction').value,
-
-                // Cài đặt chung
                 encouragement_level: document.getElementById('encouragement_level').value,
                 language_ratio: document.getElementById('language_ratio').value,
                 topics_blocked: state.blockedTopicsTags
@@ -383,7 +350,7 @@ export async function renderConfig() {
                 renderChildMenu();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
-                btn.innerText = '💾 Lưu Cấu Hình';
+                btn.innerText = 'Lưu cấu hình';
                 btn.disabled = false;
             }
         });

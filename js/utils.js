@@ -36,13 +36,12 @@ export function showToast(message, type = 'success') {
         document.body.appendChild(toast);
     }
     toast.className = 'toast';
-    toast.innerHTML = type === 'success' ? `✅ ${message}` : `ℹ️ ${message}`;
-    
-    // Trigger reflow
+    toast.innerHTML = type === 'success' ? `Đã xong: ${message}` : `Thông báo: ${message}`;
+
     void toast.offsetWidth;
-    
+
     toast.classList.add('show');
-    
+
     if (window.toastTimeout) clearTimeout(window.toastTimeout);
     window.toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
