@@ -9,6 +9,7 @@ const FACEBOOK_GRAPH_VERSION = import.meta.env?.VITE_FACEBOOK_GRAPH_VERSION || '
 
 let googleScriptPromise = null;
 let facebookScriptPromise = null;
+let facebookReady = false;
 
 function loadScript(src, globalName) {
     if (globalName && window[globalName]) {
@@ -43,6 +44,21 @@ function showError(message) {
     errorDiv.classList.remove('hidden');
 }
 
+function hideError() {
+    const errorDiv = document.getElementById('authError');
+    if (!errorDiv) return;
+    errorDiv.classList.add('hidden');
+    errorDiv.innerText = '';
+}
+
+function setFacebookButtonBusy(isBusy) {
+    const button = document.getElementById('facebookLoginBtn');
+    if (!button) return;
+    button.disabled = false;
+    button.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    button.innerText = isBusy ? 'Đang chuẩn bị Facebook...' : 'Tiếp tục với Facebook';
+}
+
 async function initGoogleButton() {
     if (!GOOGLE_CLIENT_ID) return;
     googleScriptPromise ||= loadScript('https://accounts.google.com/gsi/client', 'google');
@@ -70,22 +86,97 @@ async function initGoogleButton() {
     });
 }
 
-async function loginWithFacebook() {
+function loadFacebookSdk() {
+    if (!FACEBOOK_APP_ID) {
+        return Promise.reject(new Error('Đăng nhập Facebook chưa được cấu hình.'));
+    }
+    if (window.FB) {
+        window.FB.init({
+            appId: FACEBOOK_APP_ID,
+            cookie: true,
+            xfbml: false,
+            version: FACEBOOK_GRAPH_VERSION,
+        });
+        facebookReady = true;
+        return Promise.resolve(window.FB);
+    }
+
+    facebookScriptPromise ||= new Promise((resolve, reject) => {
+        let settled = false;
+        const finish = () => {
+            if (settled || !window.FB) return;
+            settled = true;
+            window.FB.init({
+                appId: FACEBOOK_APP_ID,
+                cookie: true,
+                xfbml: false,
+                version: FACEBOOK_GRAPH_VERSION,
+            });
+            facebookReady = true;
+            resolve(window.FB);
+        };
+        const fail = (message) => {
+            if (settled) return;
+            settled = true;
+            reject(new Error(message));
+        };
+
+        window.fbAsyncInit = finish;
+
+        const existing = document.getElementById('facebook-jssdk');
+        if (existing) {
+            existing.addEventListener('load', finish, { once: true });
+            existing.addEventListener('error', () => fail('Không tải được Facebook SDK.'), { once: true });
+            setTimeout(finish, 0);
+        } else {
+            const script = document.createElement('script');
+            script.id = 'facebook-jssdk';
+            script.src = 'https://connect.facebook.net/vi_VN/sdk.js';
+            script.async = true;
+            script.defer = true;
+            script.crossOrigin = 'anonymous';
+            script.onload = finish;
+            script.onerror = () => fail('Không tải được Facebook SDK.');
+            document.body.appendChild(script);
+        }
+
+        setTimeout(() => fail('Facebook SDK tải quá lâu. Hãy kiểm tra domain/app id Facebook.'), 15000);
+    });
+
+    return facebookScriptPromise;
+}
+
+function preloadFacebookSdk() {
+    if (!FACEBOOK_APP_ID) return;
+    setFacebookButtonBusy(true);
+    loadFacebookSdk()
+        .then(() => setFacebookButtonBusy(false))
+        .catch((error) => {
+            facebookScriptPromise = null;
+            facebookReady = false;
+            setFacebookButtonBusy(false);
+            showError(error.message);
+        });
+}
+
+function loginWithFacebook(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    hideError();
+
     if (!FACEBOOK_APP_ID) {
         showError('Đăng nhập Facebook chưa được cấu hình.');
         return;
     }
-    facebookScriptPromise ||= loadScript('https://connect.facebook.net/en_US/sdk.js', 'FB');
-    await facebookScriptPromise;
-    window.FB.init({
-        appId: FACEBOOK_APP_ID,
-        cookie: true,
-        xfbml: false,
-        version: FACEBOOK_GRAPH_VERSION,
-    });
+    if (!facebookReady || !window.FB) {
+        preloadFacebookSdk();
+        showError('Facebook đang khởi động. Vui lòng bấm lại sau vài giây.');
+        return;
+    }
+
     window.FB.login(async (response) => {
         if (!response.authResponse?.accessToken) {
-            showError('Không nhận được token Facebook.');
+            showError('Bạn chưa hoàn tất đăng nhập Facebook hoặc chưa cấp quyền email.');
             return;
         }
         try {
@@ -183,4 +274,5 @@ export function renderLogin(mode = 'login') {
     });
 
     initGoogleButton().catch((error) => showError(`Không tải được đăng nhập Google: ${error.message}`));
+    preloadFacebookSdk();
 }

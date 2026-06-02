@@ -179,6 +179,14 @@ input:focus, select:focus, textarea:focus {
     background: #1877f2;
     color: white;
     margin-top: 10px;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.btn-social[aria-busy="true"] {
+    opacity: 0.7;
+    cursor: pointer;
 }
 
 .auth-tabs {
@@ -229,6 +237,19 @@ input:focus, select:focus, textarea:focus {
 .social-login {
     display: grid;
     gap: 10px;
+    position: relative;
+    isolation: isolate;
+}
+
+#googleButton {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+
+#facebookLoginBtn {
+    position: relative;
+    z-index: 2;
 }
 
 .social-note {
