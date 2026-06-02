@@ -41,6 +41,20 @@ export const api = {
         });
     },
 
+    register(parentData) {
+        return this.request('/register', {
+            method: 'POST',
+            body: JSON.stringify(parentData)
+        });
+    },
+
+    socialLogin(provider, token) {
+        return this.request('/social-login', {
+            method: 'POST',
+            body: JSON.stringify({ provider, token })
+        });
+    },
+
     async getChildren() {
         const data = await this.request('/children');
         return data.children || [];
