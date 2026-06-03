@@ -1,4 +1,37 @@
 const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:8000') + '/api/parents';
+const API_LOG_PREFIX = '[Sonic Parent][API]';
+
+function sanitizeRequestBody(body) {
+    if (!body) return null;
+    try {
+        const parsed = typeof body === 'string' ? JSON.parse(body) : body;
+        return Object.fromEntries(
+            Object.entries(parsed).map(([key, value]) => {
+                if (['password', 'confirm_password', 'token', 'accessToken'].includes(key)) {
+                    return [key, value ? '[hidden]' : value];
+                }
+                return [key, value];
+            })
+        );
+    } catch {
+        return '[unreadable body]';
+    }
+}
+
+function logApi(step, details = {}) {
+    console.log(API_LOG_PREFIX, step, {
+        time: new Date().toISOString(),
+        ...details,
+    });
+}
+
+function logApiError(step, error, details = {}) {
+    console.error(API_LOG_PREFIX, step, {
+        time: new Date().toISOString(),
+        message: error?.message || String(error),
+        ...details,
+    });
+}
 
 export const api = {
     async request(endpoint, options = {}) {
@@ -17,19 +50,35 @@ export const api = {
         };
 
         try {
+            logApi('Request started', {
+                endpoint,
+                method: config.method || 'GET',
+                apiBase: API_BASE,
+                hasAuthToken: Boolean(token),
+                body: sanitizeRequestBody(config.body),
+            });
             const response = await fetch(`${API_BASE}${endpoint}`, config);
             const data = await response.json();
 
             if (!response.ok) {
+                logApiError('Request failed', new Error(data.detail || data.error || response.statusText), {
+                    endpoint,
+                    status: response.status,
+                    response: data,
+                });
                 if (response.status === 401) {
                     localStorage.removeItem('token');
                     window.location.reload();
                 }
                 throw new Error(data.detail || data.error || 'Có lỗi xảy ra');
             }
+            logApi('Request succeeded', {
+                endpoint,
+                status: response.status,
+            });
             return data;
         } catch (error) {
-            console.error('API Error:', error);
+            logApiError('Request exception', error, { endpoint });
             throw error;
         }
     },
@@ -49,6 +98,11 @@ export const api = {
     },
 
     socialLogin(provider, token) {
+        logApi('Social login request prepared', {
+            provider,
+            hasProviderToken: Boolean(token),
+            providerTokenLength: token ? token.length : 0,
+        });
         return this.request('/social-login', {
             method: 'POST',
             body: JSON.stringify({ provider, token })
