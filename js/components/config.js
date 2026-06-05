@@ -112,7 +112,7 @@ export async function renderConfig() {
                     <h3>Giới hạn thời gian</h3>
                     <div class="form-group">
                         <label for="daily_limit">Số phút mỗi ngày</label>
-                        <input type="number" id="daily_limit" value="${config.daily_limit_minutes || 30}" placeholder="Phút/ngày" min="5" max="120">
+                        <input type="number" id="daily_limit" value="${config.daily_limit_minutes || 30}" placeholder="Phút/ngày" min="5" max="1440">
                     </div>
 
                     <div class="section-divider"></div>
