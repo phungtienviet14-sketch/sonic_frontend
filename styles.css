@@ -499,6 +499,21 @@ p {
     text-align: center;
 }
 
+.fallback-notice {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: #fff8e8;
+}
+
+.fallback-notice strong {
+    display: block;
+    color: #8a4b00;
+    margin-bottom: 4px;
+}
+
+.fallback-notice p {
+    margin: 0;
+}
+
 .workspace-header {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;

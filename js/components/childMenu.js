@@ -1,9 +1,9 @@
-import { api } from '../api.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { renderDashboard } from './dashboard.js';
 import { renderReport } from './report.js';
 import { renderConfig } from './config.js';
+import { loadChildOverview } from '../overviewFallback.js';
 import { escapeHtml } from '../utils.js';
 
 const SUBJECT_LABELS = {
@@ -42,6 +42,7 @@ export async function renderChildMenu(activeTab = 'overview') {
                     <button class="tab-button" id="openReportBtn" type="button">Báo cáo</button>
                     <button class="tab-button" id="openConfigBtn" type="button">Cấu hình</button>
                 </nav>
+                ${overview.source === 'fallback_progress_report' ? renderFallbackNotice() : ''}
 
                 ${activeTab === 'next' ? renderNextLessonPanel(overview) : renderOverviewPanel(overview)}
             </main>
@@ -70,9 +71,18 @@ export async function renderChildMenu(activeTab = 'overview') {
 async function loadOverview() {
     const childId = state.currentChild.user_id;
     if (state.overviewCache[childId]) return state.overviewCache[childId];
-    const overview = await api.getOverview(childId);
+    const overview = await loadChildOverview(state.currentChild);
     state.overviewCache[childId] = overview;
     return overview;
+}
+
+function renderFallbackNotice() {
+    return `
+        <div class="surface fallback-notice">
+            <strong>Đang dùng dữ liệu báo cáo cơ bản.</strong>
+            <p>Backend hiện tại chưa hỗ trợ tổng quan mới. Ba mẹ vẫn xem được báo cáo, cấu hình và gợi ý cơ bản trong lúc chờ backend mới được triển khai.</p>
+        </div>
+    `;
 }
 
 function renderOverviewPanel(overview) {
@@ -131,7 +141,7 @@ function renderNextLessonPanel(overview) {
                         <p><strong>Môn:</strong> ${escapeHtml(SUBJECT_LABELS[primary.subject] || primary.subject || 'Học tập')}</p>
                         <p><strong>Lý do:</strong> ${reasonLabel(primary.reason)}</p>
                         ${primary.skill_id ? `<p><strong>Kỹ năng:</strong> ${escapeHtml(labelCode(primary.skill_id))}</p>` : ''}
-                        ${primary.mastery_score !== undefined ? `<p><strong>Mastery:</strong> ${escapeHtml(primary.mastery_score)}%</p>` : ''}
+                        ${primary.mastery_score !== undefined ? `<p><strong>Mức thành thạo:</strong> ${escapeHtml(primary.mastery_score)}%</p>` : ''}
                     </div>
                 ` : '<p class="muted">Khi bé có thêm lịch sử học, hệ thống sẽ trả về đề xuất cụ thể hơn.</p>'}
             </article>

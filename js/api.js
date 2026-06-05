@@ -61,7 +61,11 @@ export const api = {
             const data = await response.json();
 
             if (!response.ok) {
-                logApiError('Gọi API thất bại', new Error(data.detail || data.error || response.statusText), {
+                const requestError = new Error(data.detail || data.error || response.statusText);
+                requestError.status = response.status;
+                requestError.endpoint = endpoint;
+                requestError.response = data;
+                logApiError('Gọi API thất bại', requestError, {
                     endpoint,
                     status: response.status,
                     response: data,
@@ -70,7 +74,7 @@ export const api = {
                     localStorage.removeItem('token');
                     window.location.reload();
                 }
-                throw new Error(data.detail || data.error || 'Có lỗi xảy ra');
+                throw requestError;
             }
             logApi('Gọi API thành công', {
                 endpoint,

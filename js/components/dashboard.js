@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { state } from '../state.js';
 import { renderLogin, appElement } from './auth.js';
 import { renderChildMenu } from './childMenu.js';
+import { loadChildOverview } from '../overviewFallback.js';
 import { escapeHtml, showToast } from '../utils.js';
 
 const SUBJECT_LABELS = {
@@ -16,7 +17,7 @@ export async function renderDashboard() {
         const overviewPairs = await Promise.all(
             state.childrenList.map(async child => {
                 try {
-                    return [child.user_id, await api.getOverview(child.user_id)];
+                    return [child.user_id, await loadChildOverview(child)];
                 } catch (error) {
                     console.warn('[Sonic cho ba mẹ] Không tải được tổng quan của bé', child.user_id, error);
                     return [child.user_id, null];
@@ -59,6 +60,7 @@ export async function renderDashboard() {
                     ${renderSummaryTile('Cảnh báo cần xem', alerts.length)}
                     ${renderSummaryTile('Đang bật học qua máy ảnh', countCameraEnabled())}
                 </section>
+                ${hasFallbackOverview() ? renderFallbackNotice() : ''}
 
                 <section class="child-grid">
                     ${state.childrenList.length ? state.childrenList.map(renderChildCard).join('') : renderEmptyState()}
@@ -268,9 +270,22 @@ function renderEmptyState() {
     `;
 }
 
+function renderFallbackNotice() {
+    return `
+        <div class="surface fallback-notice">
+            <strong>Đang dùng dữ liệu báo cáo cơ bản.</strong>
+            <p>Backend hiện tại chưa hỗ trợ tổng quan mới cho một số bé. Giao diện vẫn hoạt động, nhưng số phút học hôm nay và một vài cảnh báo có thể chưa đầy đủ.</p>
+        </div>
+    `;
+}
+
+function hasFallbackOverview() {
+    return Object.values(state.overviewCache).some(overview => overview?.source === 'fallback_progress_report');
+}
+
 function countCameraEnabled() {
     return Object.values(state.overviewCache)
-        .filter(overview => overview?.teaching_config?.camera_learning_enabled !== false)
+        .filter(overview => overview && overview.teaching_config?.camera_learning_enabled !== false)
         .length;
 }
 
