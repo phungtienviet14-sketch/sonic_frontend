@@ -25,7 +25,10 @@ export function getCheckedValues(name) {
 
 export function refreshBlockedTags() {
     const wrapper = document.getElementById('tagsWrapper');
-    wrapper.innerHTML = state.blockedTopicsTags.map(t => `<span class="tag-pill">${t}<button type="button" class="tag-remove" data-tag="${t}">&times;</button></span>`).join('');
+    if (!wrapper) return;
+    wrapper.innerHTML = state.blockedTopicsTags
+        .map(t => `<span class="tag-pill">${escapeHtml(t)}<button type="button" class="tag-remove" data-tag="${escapeHtml(t)}" aria-label="Xóa ${escapeHtml(t)}">&times;</button></span>`)
+        .join('');
 }
 
 export function showToast(message, type = 'success') {
@@ -35,15 +38,23 @@ export function showToast(message, type = 'success') {
         toast.id = 'toast';
         document.body.appendChild(toast);
     }
-    toast.className = 'toast';
-    toast.innerHTML = type === 'success' ? `Đã xong: ${message}` : `Thông báo: ${message}`;
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = type === 'success' ? `Đã xong: ${escapeHtml(message)}` : `Thông báo: ${escapeHtml(message)}`;
 
     void toast.offsetWidth;
-
     toast.classList.add('show');
 
     if (window.toastTimeout) clearTimeout(window.toastTimeout);
     window.toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
+}
+
+export function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

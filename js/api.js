@@ -132,6 +132,10 @@ export const api = {
         }
     },
 
+    getOverview(userId) {
+        return this.request(`/children/${userId}/overview`);
+    },
+
     getTeachingConfig(userId) {
         return this.request(`/children/${userId}/teaching-config`);
     },
