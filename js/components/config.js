@@ -207,7 +207,7 @@ export async function renderConfig(activeSection = 'goals') {
                                     <input type="time" id="schedule_time" value="${studySchedule.time || '19:00'}">
                                 </div>
                             </div>
-                            ${toggle('camera_learning_enabled', 'Học qua camera khi bé yêu cầu', config.camera_learning_enabled !== false)}
+                            ${toggle('camera_learning_enabled', 'Học qua máy ảnh khi bé yêu cầu', config.camera_learning_enabled !== false)}
                             <div class="form-group">
                                 <label>Chủ đề bị chặn</label>
                                 <div class="tag-input-container" id="blockedTagsContainer">
@@ -222,7 +222,7 @@ export async function renderConfig(activeSection = 'goals') {
                     </section>
 
                     <aside class="surface preview-panel">
-                        <p class="eyebrow">Preview</p>
+                        <p class="eyebrow">Xem trước</p>
                         <h2>Robot sẽ dạy như thế nào</h2>
                         <div id="robotPreview" class="preview-copy"></div>
                         <button type="submit" class="btn btn-primary" id="saveConfigBtn">Lưu cấu hình</button>
@@ -388,8 +388,8 @@ function updatePreview() {
     const english = document.getElementById('en_enabled')?.checked ? `Tiếng Anh level ${selectText('en_level')}` : 'Tiếng Anh đang tắt';
     const math = document.getElementById('math_enabled')?.checked ? `Toán level ${selectText('math_level')}` : 'Toán đang tắt';
     const camera = document.getElementById('camera_learning_enabled')?.checked
-        ? 'Camera chỉ dùng khi bé chủ động yêu cầu.'
-        : 'Robot sẽ bỏ qua các bài học qua camera.';
+        ? 'Máy ảnh chỉ được dùng khi bé chủ động yêu cầu.'
+        : 'Robot sẽ bỏ qua các bài học qua máy ảnh.';
 
     preview.innerHTML = `
         <p>${escapeHtml(personality)}, ${escapeHtml(encouragement.toLowerCase())}, ${escapeHtml(language.toLowerCase())}.</p>

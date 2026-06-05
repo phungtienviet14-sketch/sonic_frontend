@@ -18,7 +18,7 @@ export async function renderDashboard() {
                 try {
                     return [child.user_id, await api.getOverview(child.user_id)];
                 } catch (error) {
-                    console.warn('[Sonic Parent] Overview unavailable', child.user_id, error);
+                    console.warn('[Sonic cho ba mẹ] Không tải được tổng quan của bé', child.user_id, error);
                     return [child.user_id, null];
                 }
             })
@@ -37,7 +37,7 @@ export async function renderDashboard() {
             <main class="page-shell">
                 <header class="app-header">
                     <div>
-                        <p class="eyebrow">Sonic Parent</p>
+                        <p class="eyebrow">Sonic cho ba mẹ</p>
                         <h1>Bảng điều khiển học tập</h1>
                     </div>
                     <div class="header-actions">
@@ -57,7 +57,7 @@ export async function renderDashboard() {
                 <section class="dashboard-summary">
                     ${renderSummaryTile('Tổng số bé', state.childrenList.length)}
                     ${renderSummaryTile('Cảnh báo cần xem', alerts.length)}
-                    ${renderSummaryTile('Đang bật camera', countCameraEnabled())}
+                    ${renderSummaryTile('Đang bật học qua máy ảnh', countCameraEnabled())}
                 </section>
 
                 <section class="child-grid">
@@ -193,7 +193,7 @@ function renderChildCard(child) {
                     <h2>${escapeHtml(child.full_name)}</h2>
                     <div class="meta-row">
                         <span>${escapeHtml(child.age)} tuổi</span>
-                        <button class="copy-id-btn link-button" data-id="${escapeHtml(child.user_id)}" type="button">Copy ID</button>
+                        <button class="copy-id-btn link-button" data-id="${escapeHtml(child.user_id)}" type="button">Sao chép ID</button>
                     </div>
                 </div>
                 <span class="status-chip ${alerts.length ? 'warning' : 'ok'}">${alerts.length ? `${alerts.length} cảnh báo` : 'Ổn định'}</span>
@@ -230,7 +230,7 @@ function renderSubjectLine(subject, summary = {}) {
                 <span class="subject-level">${enabled ? formatLevel(summary.level) : 'Đang tắt'}</span>
             </div>
             <div class="subject-stats">
-                <span>${summary.xp ?? 0} XP</span>
+                <span>${summary.xp ?? 0} điểm XP</span>
                 <span>${summary.streak_days ?? 0} ngày</span>
             </div>
         </div>
@@ -285,5 +285,14 @@ function usagePercent(usage = {}) {
 }
 
 function formatLevel(level) {
-    return String(level || 'beginner').toUpperCase();
+    const labels = {
+        auto: 'Tự động',
+        beginner: 'Mới bắt đầu',
+        elementary: 'Sơ cấp',
+        intermediate: 'Trung cấp',
+        pre_a1: 'Tiền A1',
+        a1: 'A1',
+        a2: 'A2',
+    };
+    return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
 }

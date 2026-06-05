@@ -6,7 +6,7 @@ export const appElement = document.getElementById('app');
 const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || '';
 const FACEBOOK_APP_ID = import.meta.env?.VITE_FACEBOOK_APP_ID || '';
 const FACEBOOK_GRAPH_VERSION = import.meta.env?.VITE_FACEBOOK_GRAPH_VERSION || 'v20.0';
-const AUTH_LOG_PREFIX = '[Sonic Parent][Auth]';
+const AUTH_LOG_PREFIX = '[Sonic cho ba mẹ][Đăng nhập]';
 
 let googleScriptPromise = null;
 let facebookScriptPromise = null;
@@ -76,7 +76,7 @@ function loadScript(src, globalName) {
 }
 
 function setAuthToken(accessToken) {
-    logAuth('Auth token received; opening dashboard', {
+    logAuth('Đã nhận token đăng nhập, mở bảng điều khiển', {
         hasAccessToken: Boolean(accessToken),
     });
     localStorage.setItem('token', accessToken);
@@ -84,7 +84,7 @@ function setAuthToken(accessToken) {
 }
 
 function showError(message) {
-    logAuthError('UI error shown', new Error(message));
+    logAuthError('Hiển thị lỗi đăng nhập', new Error(message));
     const errorDiv = document.getElementById('authError');
     if (!errorDiv) return;
     errorDiv.innerText = message;
@@ -108,33 +108,25 @@ function setFacebookButtonState({ busy = false, disabled = false, label = FACEBO
 
 async function initGoogleButton() {
     if (!GOOGLE_CLIENT_ID) {
-        logAuth('Google login skipped because VITE_GOOGLE_CLIENT_ID is empty');
+        logAuth('Bỏ qua Google vì chưa cấu hình mã ứng dụng');
         return;
     }
-    logAuth('Google SDK load started');
     googleScriptPromise ||= loadScript('https://accounts.google.com/gsi/client', 'google');
     await googleScriptPromise;
     const target = document.getElementById('googleButton');
     if (!target || !window.google?.accounts?.id) {
-        logAuthError('Google SDK loaded but button target or API is missing', new Error('Google button unavailable'), {
-            hasTarget: Boolean(target),
-            hasGoogleAccountsId: Boolean(window.google?.accounts?.id),
-        });
+        logAuthError('Không tìm thấy nút hoặc SDK Google', new Error('Google unavailable'));
         return;
     }
 
-    logAuth('Google button initialized');
     window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: async (response) => {
             try {
-                logAuth('Google callback received', {
-                    hasCredential: Boolean(response?.credential),
-                });
                 const res = await api.socialLogin('google', response.credential);
                 setAuthToken(res.access_token);
             } catch (error) {
-                logAuthError('Google login failed', error);
+                logAuthError('Đăng nhập Google thất bại', error);
                 showError(error.message);
             }
         },
@@ -149,17 +141,14 @@ async function initGoogleButton() {
 }
 
 function loadFacebookSdk() {
-    logAuth('Facebook SDK load requested');
     if (!FACEBOOK_APP_ID) {
-        logAuthError('Facebook App ID is missing', new Error('Missing VITE_FACEBOOK_APP_ID'));
+        logAuthError('Facebook chưa có mã ứng dụng', new Error('Missing VITE_FACEBOOK_APP_ID'));
         return Promise.reject(new Error('Đăng nhập Facebook chưa được cấu hình.'));
     }
     if (facebookReady && window.FB) {
-        logAuth('Facebook SDK already ready');
         return Promise.resolve(window.FB);
     }
     if (window.FB) {
-        logAuth('Facebook SDK found on window; initializing');
         window.FB.init({
             appId: FACEBOOK_APP_ID,
             cookie: true,
@@ -167,22 +156,15 @@ function loadFacebookSdk() {
             version: FACEBOOK_GRAPH_VERSION,
         });
         facebookReady = true;
-        logAuth('Facebook SDK initialized from existing window.FB');
         return Promise.resolve(window.FB);
     }
 
     if (!facebookScriptPromise) {
-        logAuth('Facebook SDK script injection started', {
-            sdkUrl: 'https://connect.facebook.net/vi_VN/sdk.js',
-        });
         facebookScriptPromise = new Promise((resolve, reject) => {
             let settled = false;
             const finish = () => {
                 if (settled || !window.FB) return;
                 settled = true;
-                logAuth('Facebook SDK script loaded; initializing FB', {
-                    appIdUsedForInit: FACEBOOK_APP_ID,
-                });
                 window.FB.init({
                     appId: FACEBOOK_APP_ID,
                     cookie: true,
@@ -190,13 +172,11 @@ function loadFacebookSdk() {
                     version: FACEBOOK_GRAPH_VERSION,
                 });
                 facebookReady = true;
-                logAuth('Facebook SDK initialized successfully');
                 resolve(window.FB);
             };
             const fail = (message) => {
                 if (settled) return;
                 settled = true;
-                logAuthError('Facebook SDK load failed', new Error(message));
                 reject(new Error(message));
             };
 
@@ -204,7 +184,6 @@ function loadFacebookSdk() {
 
             const existing = document.getElementById('facebook-jssdk');
             if (existing) {
-                logAuth('Existing Facebook SDK script tag found');
                 existing.addEventListener('load', finish, { once: true });
                 existing.addEventListener('error', () => fail('Không tải được Facebook SDK.'), { once: true });
                 setTimeout(finish, 0);
@@ -220,39 +199,28 @@ function loadFacebookSdk() {
                 document.body.appendChild(script);
             }
 
-            setTimeout(() => fail('Facebook SDK tải quá lâu. Hãy kiểm tra domain/app id Facebook.'), 15000);
+            setTimeout(() => fail('Facebook SDK tải quá lâu. Hãy kiểm tra tên miền hoặc mã ứng dụng Facebook.'), 15000);
         }).catch((error) => {
             facebookScriptPromise = null;
             facebookReady = false;
-            logAuthError('Facebook SDK promise rejected and state reset', error);
+            logAuthError('Tải Facebook SDK thất bại', error);
             throw error;
         });
-    } else {
-        logAuth('Facebook SDK load already in progress');
     }
 
     return facebookScriptPromise;
 }
 
 function preloadFacebookSdk() {
-    if (!FACEBOOK_APP_ID || facebookReady) {
-        logAuth('Facebook SDK preload skipped', {
-            hasFacebookAppId: Boolean(FACEBOOK_APP_ID),
-            facebookReady,
-        });
-        return;
-    }
-    logAuth('Facebook SDK preload started');
+    if (!FACEBOOK_APP_ID || facebookReady) return;
     setFacebookButtonState({ busy: true, disabled: true, label: FACEBOOK_LOADING_LABEL });
     loadFacebookSdk()
         .then(() => {
-            logAuth('Facebook SDK preload completed');
             if (!facebookLoginInProgress) {
                 setFacebookButtonState();
             }
         })
         .catch((error) => {
-            logAuthError('Facebook SDK preload failed', error);
             if (!facebookLoginInProgress) {
                 setFacebookButtonState();
                 showError(error.message);
@@ -268,13 +236,6 @@ function clearFacebookLoginTimeout() {
 
 async function handleFacebookLoginResponse(response) {
     clearFacebookLoginTimeout();
-    logAuth('Facebook login callback received', {
-        status: response?.status,
-        hasAuthResponse: Boolean(response?.authResponse),
-        hasAccessToken: Boolean(response?.authResponse?.accessToken),
-        grantedScopes: response?.authResponse?.grantedScopes,
-        deniedScopes: response?.authResponse?.deniedScopes,
-    });
     try {
         if (!response?.authResponse?.accessToken) {
             showError('Bạn chưa hoàn tất đăng nhập Facebook hoặc chưa cấp quyền email.');
@@ -282,14 +243,10 @@ async function handleFacebookLoginResponse(response) {
         }
 
         setFacebookButtonState({ busy: true, disabled: true, label: FACEBOOK_VERIFYING_LABEL });
-        logAuth('Sending Facebook access token to backend', {
-            provider: 'facebook',
-            tokenLength: response.authResponse.accessToken.length,
-        });
         const res = await api.socialLogin('facebook', response.authResponse.accessToken);
         setAuthToken(res.access_token);
     } catch (error) {
-        logAuthError('Facebook backend verification failed', error);
+        logAuthError('Xác thực Facebook với máy chủ thất bại', error);
         showError(error.message);
     } finally {
         facebookLoginInProgress = false;
@@ -302,22 +259,13 @@ function loginWithFacebook(event) {
     event?.stopPropagation();
     hideError();
 
-    logAuth('Facebook login button clicked', {
-        scopeRequested: 'email,public_profile',
-    });
-
-    if (facebookLoginInProgress) {
-        logAuth('Facebook login click ignored because another login is in progress');
-        return;
-    }
+    if (facebookLoginInProgress) return;
 
     if (!FACEBOOK_APP_ID) {
-        logAuthError('Facebook login blocked because App ID is missing', new Error('Missing VITE_FACEBOOK_APP_ID'));
         showError('Đăng nhập Facebook chưa được cấu hình.');
         return;
     }
     if (!facebookReady || !window.FB) {
-        logAuth('Facebook login blocked until SDK is ready');
         preloadFacebookSdk();
         showError('Facebook đang khởi động. Vui lòng thử lại sau khi nút sẵn sàng.');
         return;
@@ -327,11 +275,6 @@ function loginWithFacebook(event) {
     setFacebookButtonState({ busy: true, disabled: true, label: FACEBOOK_LOGIN_LABEL });
 
     try {
-        logAuth('Calling window.FB.login', {
-            appIdUsedForLogin: FACEBOOK_APP_ID,
-            scopeRequested: 'email,public_profile',
-            returnScopes: true,
-        });
         window.FB.login(function(response) {
             handleFacebookLoginResponse(response);
         }, {
@@ -343,27 +286,21 @@ function loginWithFacebook(event) {
             facebookLoginInProgress = false;
             facebookLoginTimeout = null;
             setFacebookButtonState();
-            logAuthError('Facebook login timed out waiting for callback', new Error('Facebook popup timeout'));
             showError('Không mở được cửa sổ Facebook. Hãy cho phép popup rồi bấm lại.');
         }, 30000);
     } catch (error) {
         facebookLoginInProgress = false;
         setFacebookButtonState();
-        logAuthError('Facebook login threw before popup completed', error);
+        logAuthError('Không mở được đăng nhập Facebook', error);
         showError(error.message);
     }
 }
 
 export function renderLogin(mode = 'login') {
     const isRegister = mode === 'register';
-    logAuth('Login screen rendered', {
-        mode,
-        hasGoogleClientId: Boolean(GOOGLE_CLIENT_ID),
-        hasFacebookAppId: Boolean(FACEBOOK_APP_ID),
-    });
     appElement.innerHTML = `
         <div class="text-center mb-2">
-            <h2>Sonic Parent</h2>
+            <h2>Sonic cho ba mẹ</h2>
             <p>${isRegister ? 'Tạo tài khoản phụ huynh' : 'Đăng nhập để quản lý tiến độ học tập của bé'}</p>
         </div>
 
@@ -389,7 +326,7 @@ export function renderLogin(mode = 'login') {
                     <input type="password" id="confirmPassword" placeholder="Nhập lại mật khẩu" required>
                 </div>
                 <div class="form-group">
-                    <input type="text" id="phone" placeholder="Số điện thoại (không bắt buộc)">
+                    <input type="text" id="phone" placeholder="Số điện thoại, không bắt buộc">
                 </div>
             ` : ''}
             <div id="authError" class="hidden auth-error"></div>
@@ -408,12 +345,12 @@ export function renderLogin(mode = 'login') {
     document.getElementById('showRegister').addEventListener('click', () => renderLogin('register'));
     document.getElementById('facebookLoginBtn')?.addEventListener('click', loginWithFacebook);
 
-    document.getElementById('authForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('authBtn');
+    document.getElementById('authForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const button = document.getElementById('authBtn');
         const errorDiv = document.getElementById('authError');
-        btn.innerText = 'Đang xử lý...';
-        btn.disabled = true;
+        button.innerText = 'Đang xử lý...';
+        button.disabled = true;
         errorDiv.classList.add('hidden');
 
         try {
@@ -439,8 +376,8 @@ export function renderLogin(mode = 'login') {
             errorDiv.innerText = error.message;
             errorDiv.classList.remove('hidden');
         } finally {
-            btn.innerText = isRegister ? 'Đăng ký' : 'Đăng nhập';
-            btn.disabled = false;
+            button.innerText = isRegister ? 'Đăng ký' : 'Đăng nhập';
+            button.disabled = false;
         }
     });
 

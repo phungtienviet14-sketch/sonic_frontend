@@ -121,7 +121,7 @@ function renderNextLessonPanel(overview) {
             <article class="surface next-lesson-main">
                 <div class="section-head">
                     <div>
-                        <p class="eyebrow">Đề xuất từ backend</p>
+                        <p class="eyebrow">Đề xuất từ hệ thống</p>
                         <h2>${primary ? escapeHtml(primary.title || primary.label || 'Bài học tiếp theo') : 'Chờ dữ liệu đề xuất'}</h2>
                     </div>
                     ${primary ? `<span class="priority ${escapeHtml(primary.priority || 'normal')}">${priorityLabel(primary.priority)}</span>` : ''}
@@ -130,7 +130,7 @@ function renderNextLessonPanel(overview) {
                     <div class="recommendation-detail">
                         <p><strong>Môn:</strong> ${escapeHtml(SUBJECT_LABELS[primary.subject] || primary.subject || 'Học tập')}</p>
                         <p><strong>Lý do:</strong> ${reasonLabel(primary.reason)}</p>
-                        ${primary.skill_id ? `<p><strong>Kỹ năng:</strong> ${escapeHtml(primary.skill_id)}</p>` : ''}
+                        ${primary.skill_id ? `<p><strong>Kỹ năng:</strong> ${escapeHtml(labelCode(primary.skill_id))}</p>` : ''}
                         ${primary.mastery_score !== undefined ? `<p><strong>Mastery:</strong> ${escapeHtml(primary.mastery_score)}%</p>` : ''}
                     </div>
                 ` : '<p class="muted">Khi bé có thêm lịch sử học, hệ thống sẽ trả về đề xuất cụ thể hơn.</p>'}
@@ -165,12 +165,12 @@ function renderSubjectOverview(subject, summary = {}) {
                 <span class="status-chip ${enabled ? 'ok' : 'muted-chip'}">${enabled ? 'Đang bật' : 'Đang tắt'}</span>
             </div>
             <div class="metric-strip">
-                <div><strong>${summary.xp ?? 0}</strong><span>XP</span></div>
-                <div><strong>${summary.streak_days ?? 0}</strong><span>streak</span></div>
-                <div><strong>${today.answered_attempts ?? 0}</strong><span>attempt</span></div>
+                <div><strong>${summary.xp ?? 0}</strong><span>điểm XP</span></div>
+                <div><strong>${summary.streak_days ?? 0}</strong><span>chuỗi ngày</span></div>
+                <div><strong>${today.answered_attempts ?? 0}</strong><span>lượt làm</span></div>
             </div>
             <div class="subject-note">
-                <p>Placement: ${placement.status === 'completed' ? `${placement.placement_score ?? 0}/100, level ${formatLevel(placement.recommended_level)}` : 'đang chờ'}</p>
+                <p>Đánh giá đầu vào: ${placement.status === 'completed' ? `${placement.placement_score ?? 0}/100, cấp độ ${formatLevel(placement.recommended_level)}` : 'đang chờ'}</p>
                 ${renderNeedsReview(subject, summary)}
             </div>
         </article>
@@ -182,10 +182,10 @@ function renderNeedsReview(subject, summary) {
         const wordSummary = summary.word_bank?.summary || {};
         const due = wordSummary.due_words || 0;
         const weak = wordSummary.weak_words || 0;
-        return `<p>${due || weak ? `${due} từ đến hạn, ${weak} từ yếu` : 'Word bank chưa có từ cần ôn.'}</p>`;
+        return `<p>${due || weak ? `${due} từ đến hạn, ${weak} từ yếu` : 'Kho từ chưa có từ cần ôn.'}</p>`;
     }
     const misconception = (summary.misconceptions || [])[0];
-    return `<p>${misconception ? `${misconception.error_type} lặp lại ${misconception.count || 0} lần` : 'Chưa có lỗi Toán lặp lại.'}</p>`;
+    return `<p>${misconception ? `${labelCode(misconception.error_type)} lặp lại ${misconception.count || 0} lần` : 'Chưa có lỗi Toán lặp lại.'}</p>`;
 }
 
 function renderAlertsPanel(alerts) {
@@ -233,9 +233,9 @@ function buildSourceSignals(overview) {
     const wordSummary = english.word_bank?.summary || {};
     if (wordSummary.due_words) signals.push(`${wordSummary.due_words} từ đến hạn ôn`);
     if (wordSummary.weak_words) signals.push(`${wordSummary.weak_words} từ yếu`);
-    (english.weak_skills || []).slice(0, 2).forEach(skill => signals.push(`Skill yếu: ${skill.skill_id}`));
-    (math.misconceptions || []).slice(0, 2).forEach(item => signals.push(`Lỗi Toán: ${item.error_type}`));
-    (math.weak_skills || []).slice(0, 2).forEach(skill => signals.push(`Skill Toán yếu: ${skill.skill_id}`));
+    (english.weak_skills || []).slice(0, 2).forEach(skill => signals.push(`Kỹ năng yếu: ${labelCode(skill.skill_id)}`));
+    (math.misconceptions || []).slice(0, 2).forEach(item => signals.push(`Lỗi Toán: ${labelCode(item.error_type)}`));
+    (math.weak_skills || []).slice(0, 2).forEach(skill => signals.push(`Kỹ năng Toán yếu: ${labelCode(skill.skill_id)}`));
     return signals.slice(0, 8);
 }
 
@@ -262,7 +262,7 @@ function reasonLabel(reason = '') {
     return {
         weak_or_due_word: 'Từ cần ôn hoặc sắp đến hạn',
         repeated_math_error: 'Lỗi Toán lặp lại',
-        low_mastery_or_due_skill: 'Skill yếu hoặc đến hạn luyện lại',
+        low_mastery_or_due_skill: 'Kỹ năng yếu hoặc đến hạn luyện lại',
         continue_current_level: 'Tiếp tục level hiện tại',
         repair_repeated_misconception: 'Sửa lỗi hiểu nhầm lặp lại',
     }[reason] || escapeHtml(reason || 'Theo tiến độ hiện tại');
@@ -280,5 +280,42 @@ function alertTitle(type = '') {
 }
 
 function formatLevel(level) {
-    return String(level || 'beginner').toUpperCase();
+    const labels = {
+        auto: 'Tự động',
+        beginner: 'Mới bắt đầu',
+        elementary: 'Sơ cấp',
+        intermediate: 'Trung cấp',
+        pre_a1: 'Tiền A1',
+        a1: 'A1',
+        a2: 'A2',
+    };
+    return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
+}
+
+function labelCode(value) {
+    const labels = {
+        counting: 'đếm số',
+        comparison: 'so sánh',
+        addition: 'phép cộng',
+        subtraction: 'phép trừ',
+        multiplication: 'phép nhân',
+        division: 'phép chia',
+        geometry: 'hình học',
+        geometry_shapes: 'nhận biết hình',
+        time: 'xem giờ',
+        money: 'tiền và mua bán',
+        logic: 'tư duy logic',
+        logic_patterns: 'quy luật',
+        vocabulary: 'từ vựng',
+        listening: 'nghe hiểu',
+        speaking: 'nói',
+        sentence_patterns: 'mẫu câu',
+        picture_talk: 'nói theo tranh',
+        operation_confusion: 'nhầm phép tính',
+        counting_error: 'đếm sai',
+        off_by_one: 'lệch một đơn vị',
+        carry_error: 'sai nhớ khi cộng',
+        borrow_error: 'sai mượn khi trừ',
+    };
+    return labels[String(value || '').toLowerCase()] || String(value || 'chưa rõ');
 }

@@ -1,5 +1,5 @@
 const API_BASE = (import.meta.env && import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL : 'http://localhost:8000') + '/api/parents';
-const API_LOG_PREFIX = '[Sonic Parent][API]';
+const API_LOG_PREFIX = '[Sonic cho ba mẹ][API]';
 
 function sanitizeRequestBody(body) {
     if (!body) return null;
@@ -14,7 +14,7 @@ function sanitizeRequestBody(body) {
             })
         );
     } catch {
-        return '[unreadable body]';
+        return '[không đọc được dữ liệu gửi đi]';
     }
 }
 
@@ -38,19 +38,19 @@ export const api = {
         const token = localStorage.getItem('token');
         const headers = {
             'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         };
 
         const config = {
             ...options,
             headers: {
                 ...headers,
-                ...options.headers
-            }
+                ...options.headers,
+            },
         };
 
         try {
-            logApi('Request started', {
+            logApi('Bắt đầu gọi API', {
                 endpoint,
                 method: config.method || 'GET',
                 apiBase: API_BASE,
@@ -61,7 +61,7 @@ export const api = {
             const data = await response.json();
 
             if (!response.ok) {
-                logApiError('Request failed', new Error(data.detail || data.error || response.statusText), {
+                logApiError('Gọi API thất bại', new Error(data.detail || data.error || response.statusText), {
                     endpoint,
                     status: response.status,
                     response: data,
@@ -72,13 +72,13 @@ export const api = {
                 }
                 throw new Error(data.detail || data.error || 'Có lỗi xảy ra');
             }
-            logApi('Request succeeded', {
+            logApi('Gọi API thành công', {
                 endpoint,
                 status: response.status,
             });
             return data;
         } catch (error) {
-            logApiError('Request exception', error, { endpoint });
+            logApiError('Lỗi khi gọi API', error, { endpoint });
             throw error;
         }
     },
@@ -86,26 +86,26 @@ export const api = {
     login(email, password) {
         return this.request('/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password }),
         });
     },
 
     register(parentData) {
         return this.request('/register', {
             method: 'POST',
-            body: JSON.stringify(parentData)
+            body: JSON.stringify(parentData),
         });
     },
 
     socialLogin(provider, token) {
-        logApi('Social login request prepared', {
+        logApi('Chuẩn bị đăng nhập mạng xã hội', {
             provider,
             hasProviderToken: Boolean(token),
             providerTokenLength: token ? token.length : 0,
         });
         return this.request('/social-login', {
             method: 'POST',
-            body: JSON.stringify({ provider, token })
+            body: JSON.stringify({ provider, token }),
         });
     },
 
@@ -117,7 +117,7 @@ export const api = {
     addChild(childData) {
         return this.request('/children', {
             method: 'POST',
-            body: JSON.stringify(childData)
+            body: JSON.stringify(childData),
         });
     },
 
@@ -127,7 +127,7 @@ export const api = {
             const math = await this.request(`/children/${userId}/progress/math`);
             return { english, math };
         } catch (error) {
-            console.error('Report Error:', error);
+            console.error('Lỗi tải báo cáo:', error);
             throw error;
         }
     },
@@ -143,7 +143,7 @@ export const api = {
     updateTeachingConfig(userId, config) {
         return this.request(`/children/${userId}/teaching-config`, {
             method: 'PUT',
-            body: JSON.stringify(config)
+            body: JSON.stringify(config),
         });
-    }
+    },
 };

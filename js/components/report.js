@@ -71,7 +71,7 @@ function renderOverviewTab(english, math) {
             <article class="surface chart-panel">
                 <div class="section-head">
                     <div>
-                        <p class="eyebrow">Attempts, điểm, XP</p>
+                        <p class="eyebrow">Lượt làm, điểm và XP</p>
                         <h2>Nhịp tiến bộ</h2>
                     </div>
                 </div>
@@ -87,7 +87,7 @@ function renderOverviewTab(english, math) {
             </article>
 
             <article class="surface report-summary">
-                <h2>Placement</h2>
+                <h2>Đánh giá đầu vào</h2>
                 ${renderPlacementRow('Tiếng Anh', english.placement)}
                 ${renderPlacementRow('Toán', math.placement)}
             </article>
@@ -116,30 +116,30 @@ function renderSubjectTab(subject, data) {
                 <div class="section-head">
                     <div>
                         <p class="eyebrow">${meta.label}</p>
-                        <h2>Level ${formatLevel(data?.level_info?.current_level)}</h2>
+                        <h2>Cấp độ ${formatLevel(data?.level_info?.current_level)}</h2>
                     </div>
-                    <span class="status-chip ok">${data?.level_info?.total_xp || 0} XP</span>
+                    <span class="status-chip ok">${data?.level_info?.total_xp || 0} điểm XP</span>
                 </div>
                 <div class="metric-strip">
-                    <div><strong>${data?.level_info?.streak_days || 0}</strong><span>streak</span></div>
-                    <div><strong>${data?.daily_summary?.attempts?.answered_attempts || 0}</strong><span>attempt hôm nay</span></div>
+                    <div><strong>${data?.level_info?.streak_days || 0}</strong><span>chuỗi ngày</span></div>
+                    <div><strong>${data?.daily_summary?.attempts?.answered_attempts || 0}</strong><span>lượt làm hôm nay</span></div>
                     <div><strong>${scoreLabel(data?.daily_summary?.average_score)}</strong><span>điểm hôm nay</span></div>
                 </div>
                 ${renderPlacementBox(data?.placement)}
             </article>
 
             <article class="surface">
-                <h2>Skill mastery</h2>
+                <h2>Mức thành thạo kỹ năng</h2>
                 ${renderSkillMastery(data?.skill_mastery || [])}
             </article>
 
             <article class="surface">
-                <h2>${subject === 'english' ? 'Word bank cần ôn' : 'Lỗi Toán hay gặp'}</h2>
+                <h2>${subject === 'english' ? 'Kho từ cần ôn' : 'Lỗi Toán hay gặp'}</h2>
                 ${subject === 'english' ? renderWordBank(data?.word_bank) : renderMisconceptions(data?.misconceptions || [])}
             </article>
 
             <article class="surface">
-                <h2>Gợi ý từ backend</h2>
+                <h2>Gợi ý từ hệ thống</h2>
                 <div class="recommendation-list compact-list">
                     ${(data?.recommendations || []).map(item => renderRecommendationRow({ ...item, subject })).join('') || '<p class="muted compact">Chưa có gợi ý mới.</p>'}
                 </div>
@@ -187,10 +187,10 @@ function renderSubjectSummary(subject, data) {
         <div class="summary-row ${meta.className}">
             <div>
                 <strong>${meta.label}</strong>
-                <p>Level ${formatLevel(data?.level_info?.current_level)} · ${data?.level_info?.total_xp || 0} XP</p>
+                <p>Cấp độ ${formatLevel(data?.level_info?.current_level)} · ${data?.level_info?.total_xp || 0} điểm XP</p>
             </div>
             <div class="summary-numbers">
-                <span>${attempts.answered_attempts || 0} attempt</span>
+                <span>${attempts.answered_attempts || 0} lượt làm</span>
                 <span>${attempts.correct_attempts || 0} đúng</span>
             </div>
         </div>
@@ -203,20 +203,20 @@ function renderPlacementRow(label, placement = {}) {
         <div class="summary-row">
             <div>
                 <strong>${escapeHtml(label)}</strong>
-                <p>${completed ? `Đề xuất level ${formatLevel(placement.recommended_level)}` : 'Chưa hoàn tất placement'}</p>
+                <p>${completed ? `Đề xuất cấp độ ${formatLevel(placement.recommended_level)}` : 'Chưa hoàn tất đánh giá đầu vào'}</p>
             </div>
-            <span class="status-chip ${completed ? 'ok' : 'warning'}">${completed ? `${placement.placement_score ?? 0}/100` : 'Pending'}</span>
+            <span class="status-chip ${completed ? 'ok' : 'warning'}">${completed ? `${placement.placement_score ?? 0}/100` : 'Đang chờ'}</span>
         </div>
     `;
 }
 
 function renderPlacementBox(placement = {}) {
     if (placement?.status !== 'completed') {
-        return '<div class="subject-note"><p>Placement đang chờ hoàn tất.</p></div>';
+        return '<div class="subject-note"><p>Đánh giá đầu vào đang chờ hoàn tất.</p></div>';
     }
     return `
         <div class="subject-note">
-            <p>Placement ${placement.placement_score ?? 0}/100, đề xuất level ${formatLevel(placement.recommended_level)}.</p>
+            <p>Đánh giá đầu vào ${placement.placement_score ?? 0}/100, đề xuất cấp độ ${formatLevel(placement.recommended_level)}.</p>
         </div>
     `;
 }
@@ -227,7 +227,7 @@ function renderInsightBlock(label, insights = {}) {
         <div class="insight-block">
             <strong>${escapeHtml(label)}</strong>
             <p>${escapeHtml(insights.summary || 'Chưa có nhận xét mới.')}</p>
-            ${actions.length ? `<div class="signal-list inline">${actions.map(item => `<span>${escapeHtml(item.label || item.type || 'Ôn tập')}</span>`).join('')}</div>` : ''}
+            ${actions.length ? `<div class="signal-list inline">${actions.map(item => `<span>${escapeHtml(labelCode(item.label || item.type || 'Ôn tập'))}</span>`).join('')}</div>` : ''}
         </div>
     `;
 }
@@ -238,7 +238,7 @@ function renderSkillMastery(items) {
         <div class="data-table">
             ${items.slice(0, 12).map(item => `
                 <div class="data-row">
-                    <span>${escapeHtml(item.skill_id || 'skill')}</span>
+                    <span>${escapeHtml(labelCode(item.skill_id || 'skill'))}</span>
                     <strong>${Math.round(Number(item.mastery_score || 0))}%</strong>
                 </div>
             `).join('')}
@@ -272,7 +272,7 @@ function renderMisconceptions(items) {
         <div class="data-table">
             ${items.slice(0, 10).map(item => `
                 <div class="data-row">
-                    <span>${escapeHtml(item.error_type || 'unknown')}<small>${escapeHtml(item.skill_id || 'general')}</small></span>
+                    <span>${escapeHtml(labelCode(item.error_type || 'unknown'))}<small>${escapeHtml(labelCode(item.skill_id || 'general'))}</small></span>
                     <strong>${item.count || 0} lần</strong>
                 </div>
             `).join('')}
@@ -284,7 +284,7 @@ function renderRecommendationRow(item) {
     return `
         <div class="recommendation-row">
             <div>
-                <strong>${escapeHtml(item.label || item.title || item.type || 'Bài học')}</strong>
+                <strong>${escapeHtml(labelCode(item.label || item.title || item.type || 'Bài học'))}</strong>
                 <p>${escapeHtml(SUBJECTS[item.subject]?.label || item.subject || 'Học tập')} · ${reasonLabel(item.reason)}</p>
             </div>
             <span class="priority ${escapeHtml(item.priority || 'normal')}">${priorityLabel(item.priority)}</span>
@@ -304,7 +304,7 @@ function renderLearningChart(english, math) {
     window.sonicParentReportChart = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['Attempt hôm nay', 'Đúng hôm nay', 'Điểm TB', 'XP'],
+            labels: ['Lượt làm hôm nay', 'Đúng hôm nay', 'Điểm trung bình', 'XP'],
             datasets: [
                 {
                     label: 'Tiếng Anh',
@@ -346,8 +346,8 @@ function renderLearningChart(english, math) {
 function historyRows(subject, data) {
     const attempts = (data?.recent_attempts || []).map(item => ({
         subject,
-        title: item.prompt_text || item.activity_type || 'Attempt',
-        detail: item.correct === true ? 'Đúng' : item.correct === false ? 'Cần ôn' : item.status || 'Attempt',
+        title: item.prompt_text || item.activity_type || 'Lượt làm',
+        detail: item.correct === true ? 'Đúng' : item.correct === false ? 'Cần ôn' : statusLabel(item.status || 'Lượt làm'),
         score: item.score,
         date: item.answered_at || item.created_at,
     }));
@@ -382,7 +382,7 @@ function reasonLabel(reason = '') {
     return {
         weak_or_due_word: 'Từ cần ôn hoặc đến hạn',
         repeated_math_error: 'Lỗi Toán lặp lại',
-        low_mastery_or_due_skill: 'Skill yếu hoặc đến hạn',
+        low_mastery_or_due_skill: 'Kỹ năng yếu hoặc đến hạn',
         continue_current_level: 'Tiếp tục level hiện tại',
         repair_repeated_misconception: 'Sửa lỗi hiểu nhầm lặp lại',
     }[reason] || escapeHtml(reason || 'Theo tiến độ hiện tại');
@@ -393,7 +393,16 @@ function scoreLabel(score) {
 }
 
 function formatLevel(level) {
-    return String(level || 'beginner').toUpperCase();
+    const labels = {
+        auto: 'Tự động',
+        beginner: 'Mới bắt đầu',
+        elementary: 'Sơ cấp',
+        intermediate: 'Trung cấp',
+        pre_a1: 'Tiền A1',
+        a1: 'A1',
+        a2: 'A2',
+    };
+    return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
 }
 
 function formatDate(value) {
@@ -401,4 +410,48 @@ function formatDate(value) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
     return date.toLocaleDateString('vi-VN');
+}
+
+function labelCode(value) {
+    const labels = {
+        counting: 'đếm số',
+        comparison: 'so sánh',
+        addition: 'phép cộng',
+        subtraction: 'phép trừ',
+        multiplication: 'phép nhân',
+        division: 'phép chia',
+        geometry: 'hình học',
+        geometry_shapes: 'nhận biết hình',
+        time: 'xem giờ',
+        money: 'tiền và mua bán',
+        logic: 'tư duy logic',
+        logic_patterns: 'quy luật',
+        vocabulary: 'từ vựng',
+        listening: 'nghe hiểu',
+        speaking: 'nói',
+        sentence_patterns: 'mẫu câu',
+        picture_talk: 'nói theo tranh',
+        operation_confusion: 'nhầm phép tính',
+        counting_error: 'đếm sai',
+        off_by_one: 'lệch một đơn vị',
+        carry_error: 'sai nhớ khi cộng',
+        borrow_error: 'sai mượn khi trừ',
+        review_word: 'ôn từ cần nhớ',
+        repair_misconception: 'sửa lỗi hay gặp',
+        practice_skill: 'luyện kỹ năng',
+        next_lesson: 'bài tiếp theo',
+        english: 'Tiếng Anh',
+        math: 'Toán',
+    };
+    return labels[String(value || '').toLowerCase()] || String(value || 'chưa rõ');
+}
+
+function statusLabel(value) {
+    const labels = {
+        pending: 'đang chờ',
+        answered: 'đã trả lời',
+        completed: 'đã hoàn tất',
+        skipped: 'đã bỏ qua',
+    };
+    return labels[String(value || '').toLowerCase()] || String(value || 'Lượt làm');
 }
