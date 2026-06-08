@@ -1,8 +1,6 @@
+import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
-import { renderDashboard } from './dashboard.js';
-import { renderReport } from './report.js';
-import { renderConfig } from './config.js';
 import { loadChildOverview } from '../overviewFallback.js';
 import { escapeHtml, refreshIcons } from '../utils.js';
 
@@ -13,7 +11,7 @@ const SUBJECT_LABELS = {
 
 export async function renderChildMenu(activeTab = 'overview') {
     if (!state.currentChild) {
-        renderDashboard();
+        navigateTo(paths.dashboard(), { replace: true });
         return;
     }
 
@@ -25,7 +23,7 @@ export async function renderChildMenu(activeTab = 'overview') {
         appElement.innerHTML = `
             <main class="page-shell">
                 <header class="workspace-header surface">
-                    <button id="backBtn" class="btn btn-outline btn-inline" type="button">
+                    <button id="backBtn" class="btn btn-outline btn-inline" data-path="${paths.dashboard()}" type="button">
                         <i data-lucide="arrow-left"></i>
                         <span>Trở lại</span>
                     </button>
@@ -45,8 +43,8 @@ export async function renderChildMenu(activeTab = 'overview') {
                 <nav class="workspace-tabs" aria-label="Không gian học tập">
                     ${tabButton('overview', 'Tổng quan', activeTab, 'layout-dashboard')}
                     ${tabButton('next', 'Bài học tiếp theo', activeTab, 'circle-arrow-right')}
-                    <button class="tab-button" id="openReportBtn" type="button"><i data-lucide="chart-column"></i><span>Báo cáo</span></button>
-                    <button class="tab-button" id="openConfigBtn" type="button"><i data-lucide="sliders-horizontal"></i><span>Cấu hình</span></button>
+                    <button class="tab-button" id="openReportBtn" data-path="${paths.report(state.currentChild.user_id)}" type="button"><i data-lucide="chart-column"></i><span>Báo cáo</span></button>
+                    <button class="tab-button" id="openConfigBtn" data-path="${paths.config(state.currentChild.user_id)}" type="button"><i data-lucide="sliders-horizontal"></i><span>Cấu hình</span></button>
                 </nav>
                 ${overview.source === 'fallback_progress_report' ? renderFallbackNotice() : ''}
 
@@ -54,12 +52,12 @@ export async function renderChildMenu(activeTab = 'overview') {
             </main>
         `;
 
-        document.getElementById('backBtn').addEventListener('click', renderDashboard);
+        document.getElementById('backBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.querySelectorAll('[data-workspace-tab]').forEach(button => {
-            button.addEventListener('click', () => renderChildMenu(button.getAttribute('data-workspace-tab')));
+            button.addEventListener('click', () => navigateTo(button.getAttribute('data-path')));
         });
-        document.getElementById('openReportBtn').addEventListener('click', () => renderReport());
-        document.getElementById('openConfigBtn').addEventListener('click', () => renderConfig());
+        document.getElementById('openReportBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+        document.getElementById('openConfigBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         refreshIcons();
     } catch (error) {
         appElement.innerHTML = `
@@ -67,14 +65,14 @@ export async function renderChildMenu(activeTab = 'overview') {
                 <div class="surface error-panel">
                     <h2>Không tải được hồ sơ</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button id="backBtn" class="btn btn-primary" type="button">
+                    <button id="backBtn" class="btn btn-primary" data-path="${paths.dashboard()}" type="button">
                         <i data-lucide="arrow-left"></i>
                         <span>Trở lại</span>
                     </button>
                 </div>
             </main>
         `;
-        document.getElementById('backBtn').addEventListener('click', renderDashboard);
+        document.getElementById('backBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         refreshIcons();
     }
 }
@@ -286,7 +284,7 @@ function buildSourceSignals(overview) {
 }
 
 function tabButton(tab, label, activeTab, icon) {
-    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-workspace-tab="${tab}" type="button"><i data-lucide="${icon}"></i><span>${label}</span></button>`;
+    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-workspace-tab="${tab}" data-path="${paths.child(state.currentChild.user_id, tab)}" type="button"><i data-lucide="${icon}"></i><span>${label}</span></button>`;
 }
 
 function childInitial(overview) {

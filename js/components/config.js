@@ -1,7 +1,7 @@
 import { api } from '../api.js';
+import { navigateTo, paths, writePath } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
-import { renderChildMenu } from './childMenu.js';
 import { buildCheckboxGroup, buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, refreshIcons, showToast } from '../utils.js';
 
 const englishLevelOptions = [
@@ -75,7 +75,7 @@ export async function renderConfig(activeSection = 'goals') {
                         <p class="eyebrow">${escapeHtml(state.currentChild.full_name)}</p>
                         <h1>Cấu hình robot</h1>
                     </div>
-                    <button id="backMenuBtn" class="btn btn-outline btn-inline" type="button">
+                    <button id="backMenuBtn" class="btn btn-outline btn-inline" data-path="${paths.child(state.currentChild.user_id)}" type="button">
                         <i data-lucide="arrow-left"></i>
                         <span>Trở lại</span>
                     </button>
@@ -248,23 +248,27 @@ export async function renderConfig(activeSection = 'goals') {
                 <div class="surface error-panel">
                     <h2>Không tải được cấu hình</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button id="backMenuBtn" class="btn btn-primary" type="button">
+                    <button id="backMenuBtn" class="btn btn-primary" data-path="${paths.child(state.currentChild.user_id)}" type="button">
                         <i data-lucide="arrow-left"></i>
                         <span>Quay lại</span>
                     </button>
                 </div>
             </main>
         `;
-        document.getElementById('backMenuBtn').addEventListener('click', () => renderChildMenu('overview'));
+        document.getElementById('backMenuBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         refreshIcons();
     }
 }
 
 function bindConfigEvents() {
-    document.getElementById('backMenuBtn').addEventListener('click', () => renderChildMenu('overview'));
+    document.getElementById('backMenuBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
     document.querySelectorAll('[data-config-tab]').forEach(button => {
-        button.addEventListener('click', () => switchConfigSection(button.getAttribute('data-config-tab')));
+        button.addEventListener('click', () => {
+            const section = button.getAttribute('data-config-tab');
+            writePath(button.getAttribute('data-path'));
+            switchConfigSection(section);
+        });
     });
 
     document.querySelectorAll('.preset-button').forEach(button => {
@@ -383,7 +387,7 @@ async function saveConfig(event) {
         await api.updateTeachingConfig(state.currentChild.user_id, updatedConfig);
         state.overviewCache[state.currentChild.user_id] = null;
         showToast('Đã lưu cấu hình');
-        renderChildMenu('overview');
+        navigateTo(paths.child(state.currentChild.user_id), { replace: true });
     } catch (error) {
         showToast(error.message, 'error');
         button.innerHTML = '<i data-lucide="save"></i><span>Lưu cấu hình</span>';
@@ -448,7 +452,7 @@ function presetButton(preset, title, subtitle, icon) {
 }
 
 function sectionButton(section, label, activeSection, icon) {
-    return `<button class="tab-button ${section === activeSection ? 'active' : ''}" data-config-tab="${section}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
+    return `<button class="tab-button ${section === activeSection ? 'active' : ''}" data-config-tab="${section}" data-path="${paths.config(state.currentChild.user_id, section)}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
 }
 
 function toggle(id, label, checked) {

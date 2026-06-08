@@ -1,7 +1,7 @@
 import { api } from '../api.js';
+import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
-import { renderChildMenu } from './childMenu.js';
 import { escapeHtml, refreshIcons } from '../utils.js';
 
 const SUBJECTS = {
@@ -23,7 +23,7 @@ export async function renderReport(activeTab = 'overview') {
                         <p class="eyebrow">${escapeHtml(state.currentChild.full_name)}</p>
                         <h1>Báo cáo học tập</h1>
                     </div>
-                    <button id="backMenuBtn" class="btn btn-outline btn-inline" type="button">
+                    <button id="backMenuBtn" class="btn btn-outline btn-inline" data-path="${paths.child(state.currentChild.user_id)}" type="button">
                         <i data-lucide="x"></i>
                         <span>Đóng</span>
                     </button>
@@ -40,9 +40,9 @@ export async function renderReport(activeTab = 'overview') {
             </main>
         `;
 
-        document.getElementById('backMenuBtn').addEventListener('click', () => renderChildMenu('overview'));
+        document.getElementById('backMenuBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.querySelectorAll('[data-report-tab]').forEach(button => {
-            button.addEventListener('click', () => renderReport(button.getAttribute('data-report-tab')));
+            button.addEventListener('click', () => navigateTo(button.getAttribute('data-path')));
         });
         refreshIcons();
         if (activeTab === 'overview') {
@@ -54,14 +54,14 @@ export async function renderReport(activeTab = 'overview') {
                 <div class="surface error-panel">
                     <h2>Không tải được báo cáo</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button id="backMenuBtn" class="btn btn-primary" type="button">
+                    <button id="backMenuBtn" class="btn btn-primary" data-path="${paths.child(state.currentChild.user_id)}" type="button">
                         <i data-lucide="arrow-left"></i>
                         <span>Quay lại</span>
                     </button>
                 </div>
             </main>
         `;
-        document.getElementById('backMenuBtn').addEventListener('click', () => renderChildMenu('overview'));
+        document.getElementById('backMenuBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         refreshIcons();
     }
 }
@@ -377,7 +377,7 @@ function tagRecommendations(subject, items = []) {
 }
 
 function reportTabButton(tab, label, activeTab, icon) {
-    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-report-tab="${tab}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
+    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-report-tab="${tab}" data-path="${paths.report(state.currentChild.user_id, tab)}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
 }
 
 function priorityLabel(priority = 'normal') {

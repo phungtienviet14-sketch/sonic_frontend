@@ -1,7 +1,7 @@
 import { api } from '../api.js';
+import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
-import { renderLogin, appElement } from './auth.js';
-import { renderChildMenu } from './childMenu.js';
+import { appElement } from './auth.js';
 import { loadChildOverview } from '../overviewFallback.js';
 import { escapeHtml, refreshIcons, showToast } from '../utils.js';
 
@@ -48,7 +48,7 @@ export async function renderDashboard() {
                             <span>Thông báo</span>
                             <span id="notiBadge" class="badge ${alerts.length ? '' : 'hidden'}">${alerts.length}</span>
                         </button>
-                        <button id="logoutBtn" class="btn btn-outline btn-inline" type="button">
+                        <button id="logoutBtn" class="btn btn-outline btn-inline" data-path="${paths.login()}" type="button">
                             <i data-lucide="log-out"></i>
                             <span>Đăng xuất</span>
                         </button>
@@ -73,20 +73,20 @@ export async function renderDashboard() {
                     ${state.childrenList.length ? state.childrenList.map(renderChildCard).join('') : renderEmptyState()}
                 </section>
 
-                <button class="btn btn-primary btn-wide" id="addChildBtn" type="button">Thêm bé mới</button>
+                <button class="btn btn-primary btn-wide" id="addChildBtn" data-path="${paths.addChild()}" type="button">Thêm bé mới</button>
             </main>
         `;
 
-        document.getElementById('logoutBtn').addEventListener('click', () => {
+        document.getElementById('logoutBtn').addEventListener('click', (event) => {
             localStorage.removeItem('token');
-            renderLogin();
+            navigateTo(event.currentTarget.getAttribute('data-path'), { replace: true });
         });
 
         document.getElementById('notiBtn').addEventListener('click', () => {
             document.getElementById('notiDropdown').classList.toggle('hidden');
         });
 
-        document.getElementById('addChildBtn').addEventListener('click', renderAddChildForm);
+        document.getElementById('addChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
         document.querySelectorAll('.copy-id-btn').forEach(button => {
             button.addEventListener('click', (event) => {
@@ -103,13 +103,13 @@ export async function renderDashboard() {
         document.querySelectorAll('.next-lesson-btn').forEach(button => {
             button.addEventListener('click', (event) => {
                 event.stopPropagation();
-                openChild(button.getAttribute('data-id'), 'next');
+                navigateTo(button.getAttribute('data-path'));
             });
         });
 
         document.querySelectorAll('.child-card').forEach(card => {
             card.addEventListener('click', () => {
-                openChild(card.getAttribute('data-id'), 'overview');
+                navigateTo(card.getAttribute('data-path'));
             });
         });
 
@@ -139,7 +139,7 @@ export function renderAddChildForm() {
                     <p class="eyebrow">Hồ sơ bé</p>
                     <h1>Thêm bé mới</h1>
                 </div>
-                <button id="backBtn" class="btn btn-outline btn-inline" type="button">
+                <button id="backBtn" class="btn btn-outline btn-inline" data-path="${paths.dashboard()}" type="button">
                     <i data-lucide="arrow-left"></i>
                     <span>Trở lại</span>
                 </button>
@@ -163,7 +163,7 @@ export function renderAddChildForm() {
         </main>
     `;
 
-    document.getElementById('backBtn').addEventListener('click', renderDashboard);
+    document.getElementById('backBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
     refreshIcons();
     document.getElementById('addChildForm').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -183,7 +183,7 @@ export function renderAddChildForm() {
             await api.addChild({ full_name: fullName, age });
             successDiv.innerText = `Đã thêm bé ${fullName}.`;
             successDiv.classList.remove('hidden');
-            setTimeout(() => renderDashboard(), 700);
+            setTimeout(() => navigateTo(paths.dashboard(), { replace: true }), 700);
         } catch (error) {
             errorDiv.innerText = error.message;
             errorDiv.classList.remove('hidden');
@@ -192,12 +192,6 @@ export function renderAddChildForm() {
             refreshIcons();
         }
     });
-}
-
-function openChild(childId, tab) {
-    state.currentChild = state.childrenList.find(child => child.user_id === childId);
-    state.currentOverview = state.overviewCache[childId] || null;
-    renderChildMenu(tab);
 }
 
 function renderChildCard(child) {
@@ -212,7 +206,7 @@ function renderChildCard(child) {
     const dailyLimit = usage.daily_limit_minutes ?? 30;
 
     return `
-        <article class="surface child-card" data-id="${escapeHtml(child.user_id)}">
+        <article class="surface child-card" data-id="${escapeHtml(child.user_id)}" data-path="${paths.child(child.user_id, 'overview')}">
             <div class="child-card-head">
                 <div class="avatar">${initials}</div>
                 <div class="child-title">
@@ -266,7 +260,7 @@ function renderChildCard(child) {
                 ${alerts.slice(0, 2).map(renderAlertLine).join('')}
             </div>` : ''}
 
-            <button class="btn btn-primary next-lesson-btn" data-id="${escapeHtml(child.user_id)}" type="button">
+            <button class="btn btn-primary next-lesson-btn" data-id="${escapeHtml(child.user_id)}" data-path="${paths.child(child.user_id, 'next')}" type="button">
                 <i data-lucide="circle-arrow-right"></i>
                 <span>Bài học tiếp theo</span>
             </button>

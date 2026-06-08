@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { renderDashboard } from './dashboard.js';
+import { navigateTo, paths } from '../navigation.js';
 
 export const appElement = document.getElementById('app');
 
@@ -80,7 +80,7 @@ function setAuthToken(accessToken) {
         hasAccessToken: Boolean(accessToken),
     });
     localStorage.setItem('token', accessToken);
-    renderDashboard();
+    navigateTo(paths.dashboard(), { replace: true });
 }
 
 function showError(message) {
@@ -305,8 +305,8 @@ export function renderLogin(mode = 'login') {
         </div>
 
         <div class="auth-tabs mb-2">
-            <button type="button" id="showLogin" class="auth-tab ${!isRegister ? 'active' : ''}">Đăng nhập</button>
-            <button type="button" id="showRegister" class="auth-tab ${isRegister ? 'active' : ''}">Đăng ký</button>
+            <button type="button" id="showLogin" data-path="${paths.login()}" class="auth-tab ${!isRegister ? 'active' : ''}">Đăng nhập</button>
+            <button type="button" id="showRegister" data-path="${paths.register()}" class="auth-tab ${isRegister ? 'active' : ''}">Đăng ký</button>
         </div>
 
         <form id="authForm">
@@ -341,8 +341,8 @@ export function renderLogin(mode = 'login') {
         </div>
     `;
 
-    document.getElementById('showLogin').addEventListener('click', () => renderLogin('login'));
-    document.getElementById('showRegister').addEventListener('click', () => renderLogin('register'));
+    document.getElementById('showLogin').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+    document.getElementById('showRegister').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
     document.getElementById('facebookLoginBtn')?.addEventListener('click', loginWithFacebook);
 
     document.getElementById('authForm').addEventListener('submit', async (event) => {

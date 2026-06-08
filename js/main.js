@@ -1,14 +1,7 @@
-import { api } from './api.js';
-import { renderLogin } from './components/auth.js';
-import { renderDashboard } from './components/dashboard.js';
+import { initRouter } from './router.js';
 
 export function init() {
-    const token = localStorage.getItem('token');
-    if (token) {
-        renderDashboard();
-    } else {
-        renderLogin();
-    }
+    initRouter();
 }
 
 document.addEventListener('DOMContentLoaded', init);
