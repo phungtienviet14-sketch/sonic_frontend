@@ -758,7 +758,7 @@ p {
 }
 
 .workspace-tabs,
-.config-tabs {
+.config-jump-nav {
     display: flex;
     gap: 8px;
     overflow-x: auto;
@@ -1088,30 +1088,27 @@ p {
 
 .config-layout {
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr) minmax(280px, 0.65fr);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.55fr);
     gap: 14px;
     align-items: start;
 }
 
-.config-tabs {
-    position: sticky;
-    top: 18px;
-    display: grid;
-    min-width: 0;
-    overflow: hidden;
+.config-jump-nav {
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px;
+    overflow: visible;
 }
 
-.config-tabs .tab-button {
-    width: 100%;
+.config-jump-nav .tab-button {
+    flex: 0 1 auto;
     min-width: 0;
-    justify-content: flex-start;
-    text-align: left;
+    min-height: 38px;
 }
 
-.config-tabs .tab-button span {
+.config-jump-nav .tab-button span {
     min-width: 0;
-    overflow-wrap: anywhere;
-    white-space: normal;
+    white-space: nowrap;
 }
 
 .config-section {
@@ -1496,25 +1493,13 @@ textarea:focus {
         grid-template-columns: 1fr;
     }
 
-    .config-tabs,
     .preview-panel {
         position: static;
     }
 
-    .config-tabs {
-        display: flex;
+    .config-jump-nav {
+        flex-wrap: nowrap;
         overflow-x: auto;
-    }
-
-    .config-tabs .tab-button {
-        width: auto;
-        justify-content: center;
-        text-align: center;
-    }
-
-    .config-tabs .tab-button span {
-        overflow-wrap: normal;
-        white-space: nowrap;
     }
 
     .preset-grid {

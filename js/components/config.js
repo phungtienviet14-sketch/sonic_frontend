@@ -59,8 +59,6 @@ const languageRatioOptions = [
     { value: 'balanced', label: 'Song ngữ cân bằng' },
 ];
 
-let configSectionObserver = null;
-
 export async function renderConfig(activeSection = 'goals') {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải cấu hình...</p>`;
     try {
@@ -98,14 +96,14 @@ export async function renderConfig(activeSection = 'goals') {
                     </div>
                 </section>
 
-                <form id="configForm" class="config-layout">
-                    <nav class="config-tabs" aria-label="Cấu hình robot">
-                        ${sectionButton('goals', 'Mục tiêu', activeSection, 'target')}
-                        ${sectionButton('english', 'Tiếng Anh', activeSection, 'languages')}
-                        ${sectionButton('math', 'Toán', activeSection, 'calculator')}
-                        ${sectionButton('safety', 'An toàn & thời gian', activeSection, 'shield-check')}
-                    </nav>
+                <nav class="surface config-jump-nav" aria-label="Đi tới nhóm cấu hình">
+                    ${sectionButton('goals', 'Mục tiêu', activeSection, 'target')}
+                    ${sectionButton('english', 'Tiếng Anh', activeSection, 'languages')}
+                    ${sectionButton('math', 'Toán', activeSection, 'calculator')}
+                    ${sectionButton('safety', 'An toàn & thời gian', activeSection, 'shield-check')}
+                </nav>
 
+                <form id="configForm" class="config-layout">
                     <section class="surface config-panel">
                         <div class="config-section" data-config-section="goals">
                             <h2>Mục tiêu</h2>
@@ -242,7 +240,7 @@ export async function renderConfig(activeSection = 'goals') {
 
         bindConfigEvents();
         switchConfigSection(activeSection);
-        bindConfigScrollSpy(activeSection);
+        requestAnimationFrame(() => scrollToConfigSection(activeSection, { behavior: 'auto' }));
         updatePreview();
         refreshIcons();
     } catch (error) {
@@ -318,38 +316,11 @@ function switchConfigSection(section) {
     });
 }
 
-function scrollToConfigSection(section) {
+function scrollToConfigSection(section, options = {}) {
     document.querySelector(`[data-config-section="${section}"]`)?.scrollIntoView({
-        behavior: 'smooth',
+        behavior: options.behavior || 'smooth',
         block: 'start',
     });
-}
-
-function bindConfigScrollSpy(activeSection) {
-    configSectionObserver?.disconnect();
-
-    const sections = Array.from(document.querySelectorAll('[data-config-section]'));
-    if (!sections.length) return;
-
-    let currentSection = activeSection;
-    configSectionObserver = new IntersectionObserver((entries) => {
-        const visible = entries
-            .filter(entry => entry.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const section = visible?.target?.getAttribute('data-config-section');
-        if (!section || section === currentSection) return;
-
-        currentSection = section;
-        switchConfigSection(section);
-        writePath(paths.config(state.currentChild.user_id, section), { replace: true });
-    }, {
-        root: null,
-        rootMargin: '-24% 0px -58% 0px',
-        threshold: [0.1, 0.35, 0.6],
-    });
-
-    sections.forEach(section => configSectionObserver.observe(section));
-    requestAnimationFrame(() => scrollToConfigSection(activeSection));
 }
 
 function applyPreset(preset) {
