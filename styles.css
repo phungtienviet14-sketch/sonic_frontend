@@ -1088,7 +1088,7 @@ p {
 
 .config-layout {
     display: grid;
-    grid-template-columns: 170px minmax(0, 1fr) minmax(280px, 0.65fr);
+    grid-template-columns: 220px minmax(0, 1fr) minmax(280px, 0.65fr);
     gap: 14px;
     align-items: start;
 }
@@ -1097,7 +1097,21 @@ p {
     position: sticky;
     top: 18px;
     display: grid;
-    overflow: visible;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.config-tabs .tab-button {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.config-tabs .tab-button span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
 }
 
 .config-section {
@@ -1463,6 +1477,17 @@ textarea:focus {
     .config-tabs {
         display: flex;
         overflow-x: auto;
+    }
+
+    .config-tabs .tab-button {
+        width: auto;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .config-tabs .tab-button span {
+        overflow-wrap: normal;
+        white-space: nowrap;
     }
 
     .preset-grid {
