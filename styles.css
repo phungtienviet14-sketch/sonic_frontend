@@ -1087,47 +1087,9 @@ p {
 
 .config-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.48fr);
     gap: 14px;
     align-items: start;
-}
-
-.config-page {
-    padding-right: 246px;
-}
-
-.config-side-rail {
-    display: grid;
-    gap: 14px;
-    align-self: start;
-}
-
-.config-jump-nav {
-    position: fixed;
-    top: 110px;
-    right: max(24px, calc((100vw - 1180px) / 2 + 24px));
-    z-index: 20;
-    display: grid;
-    gap: 8px;
-    width: 224px;
-    max-height: calc(100vh - 132px);
-    overflow: auto;
-    padding: 10px;
-    box-shadow: var(--shadow);
-}
-
-.config-jump-nav .tab-button {
-    width: 100%;
-    min-width: 0;
-    justify-content: flex-start;
-    min-height: 44px;
-    text-align: left;
-}
-
-.config-jump-nav .tab-button span {
-    min-width: 0;
-    overflow-wrap: anywhere;
-    white-space: normal;
 }
 
 .config-section {
@@ -1508,36 +1470,6 @@ textarea:focus {
     .next-lesson-layout,
     .config-layout {
         grid-template-columns: 1fr;
-    }
-
-    .config-page {
-        padding-right: 0;
-    }
-
-    .config-side-rail {
-        order: -1;
-    }
-
-    .config-jump-nav {
-        position: static;
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        width: auto;
-        max-height: none;
-        box-shadow: var(--shadow);
-    }
-
-    .config-jump-nav .tab-button {
-        width: auto;
-        justify-content: center;
-        min-height: 40px;
-        text-align: center;
-    }
-
-    .config-jump-nav .tab-button span {
-        overflow-wrap: normal;
-        white-space: nowrap;
     }
 
     .preset-grid {

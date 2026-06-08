@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { navigateTo, paths, writePath } from '../navigation.js';
+import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { buildCheckboxGroup, buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, refreshIcons, showToast } from '../utils.js';
@@ -59,8 +59,6 @@ const languageRatioOptions = [
     { value: 'balanced', label: 'Song ngữ cân bằng' },
 ];
 
-let configSectionObserver = null;
-
 export async function renderConfig(activeSection = 'goals') {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải cấu hình...</p>`;
     try {
@@ -71,7 +69,7 @@ export async function renderConfig(activeSection = 'goals') {
         const scheduleDays = studySchedule.days || [];
 
         appElement.innerHTML = `
-            <main class="page-shell config-page">
+            <main class="page-shell">
                 <header class="app-header simple">
                     <div>
                         <p class="eyebrow">${escapeHtml(state.currentChild.full_name)}</p>
@@ -219,32 +217,22 @@ export async function renderConfig(activeSection = 'goals') {
                         </div>
                     </section>
 
-                    <aside class="config-side-rail">
-                        <nav class="surface config-jump-nav" aria-label="Đi tới nhóm cấu hình">
-                            ${sectionButton('goals', 'Mục tiêu', activeSection, 'target')}
-                            ${sectionButton('english', 'Tiếng Anh', activeSection, 'languages')}
-                            ${sectionButton('math', 'Toán', activeSection, 'calculator')}
-                            ${sectionButton('safety', 'An toàn & thời gian', activeSection, 'shield-check')}
-                        </nav>
-
-                        <section class="surface preview-panel">
-                            <span class="preview-icon"><i data-lucide="bot"></i></span>
-                            <p class="eyebrow">Xem trước</p>
-                            <h2>Robot sẽ dạy như thế nào</h2>
-                            <div id="robotPreview" class="preview-copy"></div>
-                            <button type="submit" class="btn btn-primary" id="saveConfigBtn">
-                                <i data-lucide="save"></i>
-                                <span>Lưu cấu hình</span>
-                            </button>
-                        </section>
+                    <aside class="surface preview-panel">
+                        <span class="preview-icon"><i data-lucide="bot"></i></span>
+                        <p class="eyebrow">Xem trước</p>
+                        <h2>Robot sẽ dạy như thế nào</h2>
+                        <div id="robotPreview" class="preview-copy"></div>
+                        <button type="submit" class="btn btn-primary" id="saveConfigBtn">
+                            <i data-lucide="save"></i>
+                            <span>Lưu cấu hình</span>
+                        </button>
                     </aside>
                 </form>
             </main>
         `;
 
         bindConfigEvents();
-        switchConfigSection(activeSection);
-        bindConfigScrollSpy(activeSection);
+        requestAnimationFrame(() => scrollToConfigSection(activeSection));
         updatePreview();
         refreshIcons();
     } catch (error) {
@@ -267,15 +255,6 @@ export async function renderConfig(activeSection = 'goals') {
 
 function bindConfigEvents() {
     document.getElementById('backMenuBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
-
-    document.querySelectorAll('[data-config-tab]').forEach(button => {
-        button.addEventListener('click', () => {
-            const section = button.getAttribute('data-config-tab');
-            writePath(button.getAttribute('data-path'));
-            switchConfigSection(section);
-            scrollToConfigSection(section);
-        });
-    });
 
     document.querySelectorAll('.preset-button').forEach(button => {
         button.addEventListener('click', () => {
@@ -314,44 +293,11 @@ function bindConfigEvents() {
     document.getElementById('configForm').addEventListener('submit', saveConfig);
 }
 
-function switchConfigSection(section) {
-    document.querySelectorAll('[data-config-tab]').forEach(button => {
-        button.classList.toggle('active', button.getAttribute('data-config-tab') === section);
-    });
-}
-
-function scrollToConfigSection(section, options = {}) {
+function scrollToConfigSection(section) {
     document.querySelector(`[data-config-section="${section}"]`)?.scrollIntoView({
-        behavior: options.behavior || 'smooth',
+        behavior: 'auto',
         block: 'start',
     });
-}
-
-function bindConfigScrollSpy(activeSection) {
-    configSectionObserver?.disconnect();
-
-    const sections = Array.from(document.querySelectorAll('[data-config-section]'));
-    if (!sections.length) return;
-
-    let currentSection = activeSection;
-    configSectionObserver = new IntersectionObserver((entries) => {
-        const visible = entries
-            .filter(entry => entry.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        const section = visible?.target?.getAttribute('data-config-section');
-        if (!section || section === currentSection) return;
-
-        currentSection = section;
-        switchConfigSection(section);
-        writePath(paths.config(state.currentChild.user_id, section), { replace: true });
-    }, {
-        root: null,
-        rootMargin: '-26% 0px -56% 0px',
-        threshold: [0.12, 0.35, 0.6],
-    });
-
-    sections.forEach(section => configSectionObserver.observe(section));
-    requestAnimationFrame(() => scrollToConfigSection(activeSection, { behavior: 'auto' }));
 }
 
 function applyPreset(preset) {
@@ -530,10 +476,6 @@ function presetButton(preset, title, subtitle, icon) {
             </span>
         </button>
     `;
-}
-
-function sectionButton(section, label, activeSection, icon) {
-    return `<button class="tab-button ${section === activeSection ? 'active' : ''}" data-config-tab="${section}" data-path="${paths.config(state.currentChild.user_id, section)}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
 }
 
 function toggle(id, label, checked) {
