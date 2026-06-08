@@ -1115,12 +1115,15 @@ p {
 }
 
 .config-section {
-    display: none;
-}
-
-.config-section.active {
     display: grid;
     gap: 16px;
+    scroll-margin-top: 24px;
+}
+
+.config-section + .config-section {
+    margin-top: 8px;
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
 }
 
 .form-grid {

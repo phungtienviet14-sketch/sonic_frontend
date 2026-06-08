@@ -59,6 +59,8 @@ const languageRatioOptions = [
     { value: 'balanced', label: 'Song ngữ cân bằng' },
 ];
 
+let configSectionObserver = null;
+
 export async function renderConfig(activeSection = 'goals') {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải cấu hình...</p>`;
     try {
@@ -105,7 +107,7 @@ export async function renderConfig(activeSection = 'goals') {
                     </nav>
 
                     <section class="surface config-panel">
-                        <div class="config-section ${activeSection === 'goals' ? 'active' : ''}" data-config-section="goals">
+                        <div class="config-section" data-config-section="goals">
                             <h2>Mục tiêu</h2>
                             <div class="form-grid">
                                 <div class="form-group">
@@ -131,7 +133,7 @@ export async function renderConfig(activeSection = 'goals') {
                             </div>
                         </div>
 
-                        <div class="config-section ${activeSection === 'english' ? 'active' : ''}" data-config-section="english">
+                        <div class="config-section" data-config-section="english">
                             <div class="section-head compact-head">
                                 <h2>Tiếng Anh</h2>
                                 ${toggle('en_enabled', 'Kích hoạt', config.english_enabled !== false)}
@@ -164,7 +166,7 @@ export async function renderConfig(activeSection = 'goals') {
                             </div>
                         </div>
 
-                        <div class="config-section ${activeSection === 'math' ? 'active' : ''}" data-config-section="math">
+                        <div class="config-section" data-config-section="math">
                             <div class="section-head compact-head">
                                 <h2>Toán</h2>
                                 ${toggle('math_enabled', 'Kích hoạt', config.math_enabled !== false)}
@@ -190,7 +192,7 @@ export async function renderConfig(activeSection = 'goals') {
                             </div>
                         </div>
 
-                        <div class="config-section ${activeSection === 'safety' ? 'active' : ''}" data-config-section="safety">
+                        <div class="config-section" data-config-section="safety">
                             <h2>An toàn & thời gian</h2>
                             <div class="form-grid">
                                 <div class="form-group">
@@ -240,6 +242,7 @@ export async function renderConfig(activeSection = 'goals') {
 
         bindConfigEvents();
         switchConfigSection(activeSection);
+        bindConfigScrollSpy(activeSection);
         updatePreview();
         refreshIcons();
     } catch (error) {
@@ -268,6 +271,7 @@ function bindConfigEvents() {
             const section = button.getAttribute('data-config-tab');
             writePath(button.getAttribute('data-path'));
             switchConfigSection(section);
+            scrollToConfigSection(section);
         });
     });
 
@@ -309,12 +313,43 @@ function bindConfigEvents() {
 }
 
 function switchConfigSection(section) {
-    document.querySelectorAll('[data-config-section]').forEach(panel => {
-        panel.classList.toggle('active', panel.getAttribute('data-config-section') === section);
-    });
     document.querySelectorAll('[data-config-tab]').forEach(button => {
         button.classList.toggle('active', button.getAttribute('data-config-tab') === section);
     });
+}
+
+function scrollToConfigSection(section) {
+    document.querySelector(`[data-config-section="${section}"]`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+    });
+}
+
+function bindConfigScrollSpy(activeSection) {
+    configSectionObserver?.disconnect();
+
+    const sections = Array.from(document.querySelectorAll('[data-config-section]'));
+    if (!sections.length) return;
+
+    let currentSection = activeSection;
+    configSectionObserver = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter(entry => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const section = visible?.target?.getAttribute('data-config-section');
+        if (!section || section === currentSection) return;
+
+        currentSection = section;
+        switchConfigSection(section);
+        writePath(paths.config(state.currentChild.user_id, section), { replace: true });
+    }, {
+        root: null,
+        rootMargin: '-24% 0px -58% 0px',
+        threshold: [0.1, 0.35, 0.6],
+    });
+
+    sections.forEach(section => configSectionObserver.observe(section));
+    requestAnimationFrame(() => scrollToConfigSection(activeSection));
 }
 
 function applyPreset(preset) {
