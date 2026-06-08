@@ -59,6 +59,8 @@ const languageRatioOptions = [
     { value: 'balanced', label: 'Song ngữ cân bằng' },
 ];
 
+let configSectionObserver = null;
+
 export async function renderConfig(activeSection = 'goals') {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải cấu hình...</p>`;
     try {
@@ -69,7 +71,7 @@ export async function renderConfig(activeSection = 'goals') {
         const scheduleDays = studySchedule.days || [];
 
         appElement.innerHTML = `
-            <main class="page-shell">
+            <main class="page-shell config-page">
                 <header class="app-header simple">
                     <div>
                         <p class="eyebrow">${escapeHtml(state.currentChild.full_name)}</p>
@@ -95,13 +97,6 @@ export async function renderConfig(activeSection = 'goals') {
                         ${presetButton('bilingual', 'Song ngữ', 'Cân bằng Việt - Anh', 'languages')}
                     </div>
                 </section>
-
-                <nav class="surface config-jump-nav" aria-label="Đi tới nhóm cấu hình">
-                    ${sectionButton('goals', 'Mục tiêu', activeSection, 'target')}
-                    ${sectionButton('english', 'Tiếng Anh', activeSection, 'languages')}
-                    ${sectionButton('math', 'Toán', activeSection, 'calculator')}
-                    ${sectionButton('safety', 'An toàn & thời gian', activeSection, 'shield-check')}
-                </nav>
 
                 <form id="configForm" class="config-layout">
                     <section class="surface config-panel">
@@ -224,15 +219,24 @@ export async function renderConfig(activeSection = 'goals') {
                         </div>
                     </section>
 
-                    <aside class="surface preview-panel">
-                        <span class="preview-icon"><i data-lucide="bot"></i></span>
-                        <p class="eyebrow">Xem trước</p>
-                        <h2>Robot sẽ dạy như thế nào</h2>
-                        <div id="robotPreview" class="preview-copy"></div>
-                        <button type="submit" class="btn btn-primary" id="saveConfigBtn">
-                            <i data-lucide="save"></i>
-                            <span>Lưu cấu hình</span>
-                        </button>
+                    <aside class="config-side-rail">
+                        <nav class="surface config-jump-nav" aria-label="Đi tới nhóm cấu hình">
+                            ${sectionButton('goals', 'Mục tiêu', activeSection, 'target')}
+                            ${sectionButton('english', 'Tiếng Anh', activeSection, 'languages')}
+                            ${sectionButton('math', 'Toán', activeSection, 'calculator')}
+                            ${sectionButton('safety', 'An toàn & thời gian', activeSection, 'shield-check')}
+                        </nav>
+
+                        <section class="surface preview-panel">
+                            <span class="preview-icon"><i data-lucide="bot"></i></span>
+                            <p class="eyebrow">Xem trước</p>
+                            <h2>Robot sẽ dạy như thế nào</h2>
+                            <div id="robotPreview" class="preview-copy"></div>
+                            <button type="submit" class="btn btn-primary" id="saveConfigBtn">
+                                <i data-lucide="save"></i>
+                                <span>Lưu cấu hình</span>
+                            </button>
+                        </section>
                     </aside>
                 </form>
             </main>
@@ -240,7 +244,7 @@ export async function renderConfig(activeSection = 'goals') {
 
         bindConfigEvents();
         switchConfigSection(activeSection);
-        requestAnimationFrame(() => scrollToConfigSection(activeSection, { behavior: 'auto' }));
+        bindConfigScrollSpy(activeSection);
         updatePreview();
         refreshIcons();
     } catch (error) {
@@ -321,6 +325,33 @@ function scrollToConfigSection(section, options = {}) {
         behavior: options.behavior || 'smooth',
         block: 'start',
     });
+}
+
+function bindConfigScrollSpy(activeSection) {
+    configSectionObserver?.disconnect();
+
+    const sections = Array.from(document.querySelectorAll('[data-config-section]'));
+    if (!sections.length) return;
+
+    let currentSection = activeSection;
+    configSectionObserver = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter(entry => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const section = visible?.target?.getAttribute('data-config-section');
+        if (!section || section === currentSection) return;
+
+        currentSection = section;
+        switchConfigSection(section);
+        writePath(paths.config(state.currentChild.user_id, section), { replace: true });
+    }, {
+        root: null,
+        rootMargin: '-26% 0px -56% 0px',
+        threshold: [0.12, 0.35, 0.6],
+    });
+
+    sections.forEach(section => configSectionObserver.observe(section));
+    requestAnimationFrame(() => scrollToConfigSection(activeSection, { behavior: 'auto' }));
 }
 
 function applyPreset(preset) {
