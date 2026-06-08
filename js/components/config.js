@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { renderChildMenu } from './childMenu.js';
-import { buildCheckboxGroup, buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, showToast } from '../utils.js';
+import { buildCheckboxGroup, buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, refreshIcons, showToast } from '../utils.js';
 
 const englishLevelOptions = [
     { value: 'auto', label: 'Tự động' },
@@ -75,7 +75,10 @@ export async function renderConfig(activeSection = 'goals') {
                         <p class="eyebrow">${escapeHtml(state.currentChild.full_name)}</p>
                         <h1>Cấu hình robot</h1>
                     </div>
-                    <button id="backMenuBtn" class="btn btn-outline btn-inline" type="button">Trở lại</button>
+                    <button id="backMenuBtn" class="btn btn-outline btn-inline" type="button">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Trở lại</span>
+                    </button>
                 </header>
 
                 <section class="surface preset-panel">
@@ -86,19 +89,19 @@ export async function renderConfig(activeSection = 'goals') {
                         </div>
                     </div>
                     <div class="preset-grid">
-                        ${presetButton('gentle', 'Nhẹ nhàng', 'Ít áp lực, khen nhiều')}
-                        ${presetButton('review_words', 'Ôn từ yếu', 'Ưu tiên word bank')}
-                        ${presetButton('math_focus', 'Tập trung Toán', 'Luyện lỗi lặp lại')}
-                        ${presetButton('bilingual', 'Song ngữ', 'Cân bằng Việt - Anh')}
+                        ${presetButton('gentle', 'Nhẹ nhàng', 'Ít áp lực, khen nhiều', 'heart')}
+                        ${presetButton('review_words', 'Ôn từ yếu', 'Ưu tiên word bank', 'book-open')}
+                        ${presetButton('math_focus', 'Tập trung Toán', 'Luyện lỗi lặp lại', 'calculator')}
+                        ${presetButton('bilingual', 'Song ngữ', 'Cân bằng Việt - Anh', 'languages')}
                     </div>
                 </section>
 
                 <form id="configForm" class="config-layout">
                     <nav class="config-tabs" aria-label="Cấu hình robot">
-                        ${sectionButton('goals', 'Mục tiêu', activeSection)}
-                        ${sectionButton('english', 'Tiếng Anh', activeSection)}
-                        ${sectionButton('math', 'Toán', activeSection)}
-                        ${sectionButton('safety', 'An toàn & thời gian', activeSection)}
+                        ${sectionButton('goals', 'Mục tiêu', activeSection, 'target')}
+                        ${sectionButton('english', 'Tiếng Anh', activeSection, 'languages')}
+                        ${sectionButton('math', 'Toán', activeSection, 'calculator')}
+                        ${sectionButton('safety', 'An toàn & thời gian', activeSection, 'shield-check')}
                     </nav>
 
                     <section class="surface config-panel">
@@ -222,10 +225,14 @@ export async function renderConfig(activeSection = 'goals') {
                     </section>
 
                     <aside class="surface preview-panel">
+                        <span class="preview-icon"><i data-lucide="bot"></i></span>
                         <p class="eyebrow">Xem trước</p>
                         <h2>Robot sẽ dạy như thế nào</h2>
                         <div id="robotPreview" class="preview-copy"></div>
-                        <button type="submit" class="btn btn-primary" id="saveConfigBtn">Lưu cấu hình</button>
+                        <button type="submit" class="btn btn-primary" id="saveConfigBtn">
+                            <i data-lucide="save"></i>
+                            <span>Lưu cấu hình</span>
+                        </button>
                     </aside>
                 </form>
             </main>
@@ -234,17 +241,22 @@ export async function renderConfig(activeSection = 'goals') {
         bindConfigEvents();
         switchConfigSection(activeSection);
         updatePreview();
+        refreshIcons();
     } catch (error) {
         appElement.innerHTML = `
             <main class="page-shell narrow">
                 <div class="surface error-panel">
                     <h2>Không tải được cấu hình</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button id="backMenuBtn" class="btn btn-primary" type="button">Quay lại</button>
+                    <button id="backMenuBtn" class="btn btn-primary" type="button">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Quay lại</span>
+                    </button>
                 </div>
             </main>
         `;
         document.getElementById('backMenuBtn').addEventListener('click', () => renderChildMenu('overview'));
+        refreshIcons();
     }
 }
 
@@ -337,8 +349,9 @@ function applyPreset(preset) {
 async function saveConfig(event) {
     event.preventDefault();
     const button = document.getElementById('saveConfigBtn');
-    button.innerText = 'Đang lưu...';
+    button.innerHTML = '<i data-lucide="loader-circle"></i><span>Đang lưu...</span>';
     button.disabled = true;
+    refreshIcons();
 
     const updatedConfig = {
         personality: document.getElementById('personality').value,
@@ -373,8 +386,9 @@ async function saveConfig(event) {
         renderChildMenu('overview');
     } catch (error) {
         showToast(error.message, 'error');
-        button.innerText = 'Lưu cấu hình';
+        button.innerHTML = '<i data-lucide="save"></i><span>Lưu cấu hình</span>';
         button.disabled = false;
+        refreshIcons();
     }
 }
 
@@ -421,17 +435,20 @@ function selectText(id) {
     return element.options?.[element.selectedIndex]?.text || element.value;
 }
 
-function presetButton(preset, title, subtitle) {
+function presetButton(preset, title, subtitle, icon) {
     return `
         <button type="button" class="preset-button" data-preset="${preset}">
-            <strong>${escapeHtml(title)}</strong>
-            <span>${escapeHtml(subtitle)}</span>
+            <span class="preset-icon"><i data-lucide="${escapeHtml(icon)}"></i></span>
+            <span>
+                <strong>${escapeHtml(title)}</strong>
+                <small>${escapeHtml(subtitle)}</small>
+            </span>
         </button>
     `;
 }
 
-function sectionButton(section, label, activeSection) {
-    return `<button class="tab-button ${section === activeSection ? 'active' : ''}" data-config-tab="${section}" type="button">${escapeHtml(label)}</button>`;
+function sectionButton(section, label, activeSection, icon) {
+    return `<button class="tab-button ${section === activeSection ? 'active' : ''}" data-config-tab="${section}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
 }
 
 function toggle(id, label, checked) {

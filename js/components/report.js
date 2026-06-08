@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { renderChildMenu } from './childMenu.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, refreshIcons } from '../utils.js';
 
 const SUBJECTS = {
     english: { label: 'Tiếng Anh', className: 'english' },
@@ -23,14 +23,17 @@ export async function renderReport(activeTab = 'overview') {
                         <p class="eyebrow">${escapeHtml(state.currentChild.full_name)}</p>
                         <h1>Báo cáo học tập</h1>
                     </div>
-                    <button id="backMenuBtn" class="btn btn-outline btn-inline" type="button">Đóng</button>
+                    <button id="backMenuBtn" class="btn btn-outline btn-inline" type="button">
+                        <i data-lucide="x"></i>
+                        <span>Đóng</span>
+                    </button>
                 </header>
 
                 <nav class="workspace-tabs report-tabs" aria-label="Báo cáo học tập">
-                    ${reportTabButton('overview', 'Tổng quan', activeTab)}
-                    ${reportTabButton('english', 'Tiếng Anh', activeTab)}
-                    ${reportTabButton('math', 'Toán', activeTab)}
-                    ${reportTabButton('history', 'Lịch sử', activeTab)}
+                    ${reportTabButton('overview', 'Tổng quan', activeTab, 'chart-column')}
+                    ${reportTabButton('english', 'Tiếng Anh', activeTab, 'languages')}
+                    ${reportTabButton('math', 'Toán', activeTab, 'calculator')}
+                    ${reportTabButton('history', 'Lịch sử', activeTab, 'history')}
                 </nav>
 
                 ${renderReportBody(activeTab, english, math)}
@@ -41,6 +44,7 @@ export async function renderReport(activeTab = 'overview') {
         document.querySelectorAll('[data-report-tab]').forEach(button => {
             button.addEventListener('click', () => renderReport(button.getAttribute('data-report-tab')));
         });
+        refreshIcons();
         if (activeTab === 'overview') {
             renderLearningChart(english, math);
         }
@@ -50,11 +54,15 @@ export async function renderReport(activeTab = 'overview') {
                 <div class="surface error-panel">
                     <h2>Không tải được báo cáo</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button id="backMenuBtn" class="btn btn-primary" type="button">Quay lại</button>
+                    <button id="backMenuBtn" class="btn btn-primary" type="button">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Quay lại</span>
+                    </button>
                 </div>
             </main>
         `;
         document.getElementById('backMenuBtn').addEventListener('click', () => renderChildMenu('overview'));
+        refreshIcons();
     }
 }
 
@@ -118,7 +126,7 @@ function renderSubjectTab(subject, data) {
                         <p class="eyebrow">${meta.label}</p>
                         <h2>Cấp độ ${formatLevel(data?.level_info?.current_level)}</h2>
                     </div>
-                    <span class="status-chip ok">${data?.level_info?.total_xp || 0} điểm XP</span>
+                    <span class="status-chip ok"><i data-lucide="sparkles"></i><span>${data?.level_info?.total_xp || 0} điểm XP</span></span>
                 </div>
                 <div class="metric-strip">
                     <div><strong>${data?.level_info?.streak_days || 0}</strong><span>chuỗi ngày</span></div>
@@ -205,7 +213,10 @@ function renderPlacementRow(label, placement = {}) {
                 <strong>${escapeHtml(label)}</strong>
                 <p>${completed ? `Đề xuất cấp độ ${formatLevel(placement.recommended_level)}` : 'Chưa hoàn tất đánh giá đầu vào'}</p>
             </div>
-            <span class="status-chip ${completed ? 'ok' : 'warning'}">${completed ? `${placement.placement_score ?? 0}/100` : 'Đang chờ'}</span>
+            <span class="status-chip ${completed ? 'ok' : 'warning'}">
+                <i data-lucide="${completed ? 'circle-check' : 'hourglass'}"></i>
+                <span>${completed ? `${placement.placement_score ?? 0}/100` : 'Đang chờ'}</span>
+            </span>
         </div>
     `;
 }
@@ -365,8 +376,8 @@ function tagRecommendations(subject, items = []) {
     return items.map(item => ({ ...item, subject }));
 }
 
-function reportTabButton(tab, label, activeTab) {
-    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-report-tab="${tab}" type="button">${label}</button>`;
+function reportTabButton(tab, label, activeTab, icon) {
+    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-report-tab="${tab}" type="button"><i data-lucide="${escapeHtml(icon)}"></i><span>${escapeHtml(label)}</span></button>`;
 }
 
 function priorityLabel(priority = 'normal') {

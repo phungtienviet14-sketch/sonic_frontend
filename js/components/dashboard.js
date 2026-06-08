@@ -3,7 +3,7 @@ import { state } from '../state.js';
 import { renderLogin, appElement } from './auth.js';
 import { renderChildMenu } from './childMenu.js';
 import { loadChildOverview } from '../overviewFallback.js';
-import { escapeHtml, showToast } from '../utils.js';
+import { escapeHtml, refreshIcons, showToast } from '../utils.js';
 
 const SUBJECT_LABELS = {
     english: 'Tiếng Anh',
@@ -36,16 +36,22 @@ export async function renderDashboard() {
 
         appElement.innerHTML = `
             <main class="page-shell">
-                <header class="app-header">
-                    <div>
+                <header class="app-header dashboard-hero">
+                    <div class="header-copy">
                         <p class="eyebrow">Sonic cho ba mẹ</p>
                         <h1>Bảng điều khiển học tập</h1>
+                        <p class="header-subtitle">Theo dõi nhanh tình hình học hôm nay và ưu tiên hỗ trợ từng bé.</p>
                     </div>
                     <div class="header-actions">
                         <button id="notiBtn" class="btn btn-ghost btn-inline" type="button">
-                            Thông báo <span id="notiBadge" class="badge ${alerts.length ? '' : 'hidden'}">${alerts.length}</span>
+                            <i data-lucide="bell"></i>
+                            <span>Thông báo</span>
+                            <span id="notiBadge" class="badge ${alerts.length ? '' : 'hidden'}">${alerts.length}</span>
                         </button>
-                        <button id="logoutBtn" class="btn btn-outline btn-inline" type="button">Đăng xuất</button>
+                        <button id="logoutBtn" class="btn btn-outline btn-inline" type="button">
+                            <i data-lucide="log-out"></i>
+                            <span>Đăng xuất</span>
+                        </button>
                     </div>
                     <div id="notiDropdown" class="surface notification-popover hidden">
                         <h3>Thông báo gần đây</h3>
@@ -56,10 +62,11 @@ export async function renderDashboard() {
                 </header>
 
                 <section class="dashboard-summary">
-                    ${renderSummaryTile('Tổng số bé', state.childrenList.length)}
-                    ${renderSummaryTile('Cảnh báo cần xem', alerts.length)}
-                    ${renderSummaryTile('Đang bật học qua máy ảnh', countCameraEnabled())}
+                    ${renderSummaryTile('Tổng hồ sơ bé', state.childrenList.length, 'users', 'blue', 'Đang theo dõi')}
+                    ${renderSummaryTile('Cảnh báo cần xem', alerts.length, alerts.length ? 'triangle-alert' : 'shield-check', alerts.length ? 'amber' : 'green', alerts.length ? 'Ưu tiên hôm nay' : 'Mọi thứ ổn')}
+                    ${renderSummaryTile('Học qua máy ảnh', countCameraEnabled(), 'camera', 'teal', 'Đang bật')}
                 </section>
+                ${renderPriorityBanner(alerts)}
                 ${hasFallbackOverview() ? renderFallbackNotice() : ''}
 
                 <section class="child-grid">
@@ -106,16 +113,21 @@ export async function renderDashboard() {
             });
         });
 
+        refreshIcons();
     } catch (error) {
         appElement.innerHTML = `
             <main class="page-shell narrow">
                 <div class="surface error-panel">
                     <h2>Không tải được dữ liệu</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button class="btn btn-primary" type="button" onclick="location.reload()">Thử lại</button>
+                    <button class="btn btn-primary" type="button" onclick="location.reload()">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Thử lại</span>
+                    </button>
                 </div>
             </main>
         `;
+        refreshIcons();
     }
 }
 
@@ -127,7 +139,10 @@ export function renderAddChildForm() {
                     <p class="eyebrow">Hồ sơ bé</p>
                     <h1>Thêm bé mới</h1>
                 </div>
-                <button id="backBtn" class="btn btn-outline btn-inline" type="button">Trở lại</button>
+                <button id="backBtn" class="btn btn-outline btn-inline" type="button">
+                    <i data-lucide="arrow-left"></i>
+                    <span>Trở lại</span>
+                </button>
             </header>
             <form id="addChildForm" class="surface form-surface">
                 <div class="form-group">
@@ -140,12 +155,16 @@ export function renderAddChildForm() {
                 </div>
                 <div id="addChildError" class="hidden form-message danger"></div>
                 <div id="addChildSuccess" class="hidden form-message success"></div>
-                <button type="submit" class="btn btn-primary" id="addChildSubmitBtn">Thêm bé</button>
+                <button type="submit" class="btn btn-primary" id="addChildSubmitBtn">
+                    <i data-lucide="user-plus"></i>
+                    <span>Thêm bé</span>
+                </button>
             </form>
         </main>
     `;
 
     document.getElementById('backBtn').addEventListener('click', renderDashboard);
+    refreshIcons();
     document.getElementById('addChildForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const button = document.getElementById('addChildSubmitBtn');
@@ -154,8 +173,9 @@ export function renderAddChildForm() {
         const fullName = document.getElementById('childName').value.trim();
         const age = parseInt(document.getElementById('childAge').value, 10);
 
-        button.innerText = 'Đang thêm...';
+        button.innerHTML = '<i data-lucide="loader-circle"></i><span>Đang thêm...</span>';
         button.disabled = true;
+        refreshIcons();
         errorDiv.classList.add('hidden');
         successDiv.classList.add('hidden');
 
@@ -167,8 +187,9 @@ export function renderAddChildForm() {
         } catch (error) {
             errorDiv.innerText = error.message;
             errorDiv.classList.remove('hidden');
-            button.innerText = 'Thêm bé';
+            button.innerHTML = '<i data-lucide="user-plus"></i><span>Thêm bé</span>';
             button.disabled = false;
+            refreshIcons();
         }
     });
 }
@@ -186,6 +207,9 @@ function renderChildCard(child) {
     const usage = overview?.daily_usage || {};
     const alerts = overview?.alerts || [];
     const initials = escapeHtml((child.full_name || '?').trim().charAt(0).toUpperCase());
+    const nextAlert = alerts[0];
+    const usedMinutes = usage.used_minutes ?? 0;
+    const dailyLimit = usage.daily_limit_minutes ?? 30;
 
     return `
         <article class="surface child-card" data-id="${escapeHtml(child.user_id)}">
@@ -195,10 +219,31 @@ function renderChildCard(child) {
                     <h2>${escapeHtml(child.full_name)}</h2>
                     <div class="meta-row">
                         <span>${escapeHtml(child.age)} tuổi</span>
-                        <button class="copy-id-btn link-button" data-id="${escapeHtml(child.user_id)}" type="button">Sao chép ID</button>
+                        <button class="copy-id-btn link-button" data-id="${escapeHtml(child.user_id)}" type="button">
+                            <i data-lucide="copy"></i>
+                            <span>Sao chép ID</span>
+                        </button>
                     </div>
                 </div>
-                <span class="status-chip ${alerts.length ? 'warning' : 'ok'}">${alerts.length ? `${alerts.length} cảnh báo` : 'Ổn định'}</span>
+                <span class="status-chip ${alerts.length ? 'warning' : 'ok'}">
+                    <i data-lucide="${alerts.length ? 'triangle-alert' : 'circle-check'}"></i>
+                    <span>${alerts.length ? `${alerts.length} cảnh báo` : 'Ổn định'}</span>
+                </span>
+            </div>
+
+            <div class="child-mini-stats" aria-label="Tóm tắt học tập">
+                <div>
+                    <span>${usedMinutes}/${dailyLimit}</span>
+                    <small>phút hôm nay</small>
+                </div>
+                <div>
+                    <span>${english.xp ?? 0}</span>
+                    <small>XP tiếng Anh</small>
+                </div>
+                <div>
+                    <span>${math.xp ?? 0}</span>
+                    <small>XP Toán</small>
+                </div>
             </div>
 
             <div class="subject-lines">
@@ -216,9 +261,15 @@ function renderChildCard(child) {
                 </div>
             </div>
 
-            ${alerts.length ? `<div class="alert-preview">${alerts.slice(0, 2).map(renderAlertLine).join('')}</div>` : ''}
+            ${alerts.length ? `<div class="alert-preview">
+                <strong>${escapeHtml(nextAlert?.severity === 'high' ? 'Cần xem ngay' : 'Cần chú ý')}</strong>
+                ${alerts.slice(0, 2).map(renderAlertLine).join('')}
+            </div>` : ''}
 
-            <button class="btn btn-primary next-lesson-btn" data-id="${escapeHtml(child.user_id)}" type="button">Bài học tiếp theo</button>
+            <button class="btn btn-primary next-lesson-btn" data-id="${escapeHtml(child.user_id)}" type="button">
+                <i data-lucide="circle-arrow-right"></i>
+                <span>Bài học tiếp theo</span>
+            </button>
         </article>
     `;
 }
@@ -228,7 +279,10 @@ function renderSubjectLine(subject, summary = {}) {
     return `
         <div class="subject-line ${subject}">
             <div>
-                <span class="subject-name">${SUBJECT_LABELS[subject]}</span>
+                <span class="subject-name">
+                    <span class="subject-mark">${subject === 'english' ? 'A' : '∑'}</span>
+                    ${SUBJECT_LABELS[subject]}
+                </span>
                 <span class="subject-level">${enabled ? formatLevel(summary.level) : 'Đang tắt'}</span>
             </div>
             <div class="subject-stats">
@@ -252,12 +306,40 @@ function renderAlertLine(alert) {
     return `<p class="${escapeHtml(alert.severity || 'medium')}">${escapeHtml(alert.message || '')}</p>`;
 }
 
-function renderSummaryTile(label, value) {
+function renderSummaryTile(label, value, icon, tone, caption) {
     return `
-        <div class="summary-tile">
-            <strong>${escapeHtml(value)}</strong>
-            <span>${escapeHtml(label)}</span>
+        <div class="summary-tile ${escapeHtml(tone)}">
+            <span class="summary-icon"><i data-lucide="${escapeHtml(icon)}"></i></span>
+            <div>
+                <strong>${escapeHtml(value)}</strong>
+                <span>${escapeHtml(label)}</span>
+                <small>${escapeHtml(caption)}</small>
+            </div>
         </div>
+    `;
+}
+
+function renderPriorityBanner(alerts) {
+    if (!alerts.length) {
+        return `
+            <section class="priority-banner calm">
+                <span class="priority-banner-icon"><i data-lucide="sparkles"></i></span>
+                <div>
+                    <strong>Hôm nay chưa có cảnh báo cần xử lý.</strong>
+                    <p>Ba mẹ có thể mở từng hồ sơ để xem bài học tiếp theo hoặc điều chỉnh cấu hình dạy.</p>
+                </div>
+            </section>
+        `;
+    }
+    const topAlert = alerts.find(alert => alert.severity === 'high') || alerts[0];
+    return `
+        <section class="priority-banner attention">
+            <span class="priority-banner-icon"><i data-lucide="message-circle-warning"></i></span>
+            <div>
+                <strong>${escapeHtml(topAlert.childName)} cần ba mẹ xem.</strong>
+                <p>${escapeHtml(topAlert.message || 'Có thông tin học tập cần chú ý.')}</p>
+            </div>
+        </section>
     `;
 }
 

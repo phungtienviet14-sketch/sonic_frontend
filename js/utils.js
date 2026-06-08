@@ -50,6 +50,17 @@ export function showToast(message, type = 'success') {
     }, 3000);
 }
 
+export function refreshIcons() {
+    if (window.lucide?.createIcons) {
+        window.lucide.createIcons({
+            attrs: {
+                'stroke-width': 2.2,
+                'aria-hidden': 'true',
+            },
+        });
+    }
+}
+
 export function escapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')

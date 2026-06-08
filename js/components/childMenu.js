@@ -4,7 +4,7 @@ import { renderDashboard } from './dashboard.js';
 import { renderReport } from './report.js';
 import { renderConfig } from './config.js';
 import { loadChildOverview } from '../overviewFallback.js';
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, refreshIcons } from '../utils.js';
 
 const SUBJECT_LABELS = {
     english: 'Tiếng Anh',
@@ -25,22 +25,28 @@ export async function renderChildMenu(activeTab = 'overview') {
         appElement.innerHTML = `
             <main class="page-shell">
                 <header class="workspace-header surface">
-                    <button id="backBtn" class="btn btn-outline btn-inline" type="button">Trở lại</button>
+                    <button id="backBtn" class="btn btn-outline btn-inline" type="button">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Trở lại</span>
+                    </button>
                     <div class="workspace-title">
-                        <p class="eyebrow">Không gian học tập</p>
-                        <h1>${escapeHtml(overview.child?.full_name || state.currentChild.full_name)}</h1>
+                        <div class="workspace-child-mark">${childInitial(overview)}</div>
+                        <div>
+                            <p class="eyebrow">Không gian học tập</p>
+                            <h1>${escapeHtml(overview.child?.full_name || state.currentChild.full_name)}</h1>
+                        </div>
                     </div>
                     <div class="workspace-kpis">
-                        <span>${overview.daily_usage?.used_minutes ?? 0}/${overview.daily_usage?.daily_limit_minutes ?? 30} phút</span>
-                        <span>${overview.alerts?.length || 0} cảnh báo</span>
+                        <span><i data-lucide="timer"></i>${overview.daily_usage?.used_minutes ?? 0}/${overview.daily_usage?.daily_limit_minutes ?? 30} phút</span>
+                        <span><i data-lucide="${overview.alerts?.length ? 'triangle-alert' : 'shield-check'}"></i>${overview.alerts?.length || 0} cảnh báo</span>
                     </div>
                 </header>
 
                 <nav class="workspace-tabs" aria-label="Không gian học tập">
-                    ${tabButton('overview', 'Tổng quan', activeTab)}
-                    ${tabButton('next', 'Bài học tiếp theo', activeTab)}
-                    <button class="tab-button" id="openReportBtn" type="button">Báo cáo</button>
-                    <button class="tab-button" id="openConfigBtn" type="button">Cấu hình</button>
+                    ${tabButton('overview', 'Tổng quan', activeTab, 'layout-dashboard')}
+                    ${tabButton('next', 'Bài học tiếp theo', activeTab, 'circle-arrow-right')}
+                    <button class="tab-button" id="openReportBtn" type="button"><i data-lucide="chart-column"></i><span>Báo cáo</span></button>
+                    <button class="tab-button" id="openConfigBtn" type="button"><i data-lucide="sliders-horizontal"></i><span>Cấu hình</span></button>
                 </nav>
                 ${overview.source === 'fallback_progress_report' ? renderFallbackNotice() : ''}
 
@@ -54,17 +60,22 @@ export async function renderChildMenu(activeTab = 'overview') {
         });
         document.getElementById('openReportBtn').addEventListener('click', () => renderReport());
         document.getElementById('openConfigBtn').addEventListener('click', () => renderConfig());
+        refreshIcons();
     } catch (error) {
         appElement.innerHTML = `
             <main class="page-shell narrow">
                 <div class="surface error-panel">
                     <h2>Không tải được hồ sơ</h2>
                     <p>${escapeHtml(error.message)}</p>
-                    <button id="backBtn" class="btn btn-primary" type="button">Trở lại</button>
+                    <button id="backBtn" class="btn btn-primary" type="button">
+                        <i data-lucide="arrow-left"></i>
+                        <span>Trở lại</span>
+                    </button>
                 </div>
             </main>
         `;
         document.getElementById('backBtn').addEventListener('click', renderDashboard);
+        refreshIcons();
     }
 }
 
@@ -89,6 +100,7 @@ function renderOverviewPanel(overview) {
     const english = overview.subjects?.english || {};
     const math = overview.subjects?.math || {};
     const insights = collectInsightLines(overview);
+    const usage = overview.daily_usage || {};
 
     return `
         <section class="workspace-grid">
@@ -99,8 +111,23 @@ function renderOverviewPanel(overview) {
                         <h2>Nhịp học và ưu tiên</h2>
                     </div>
                     <span class="status-chip ${overview.daily_usage?.near_limit ? 'warning' : 'ok'}">
-                        ${overview.daily_usage?.remaining_minutes ?? 0} phút còn lại
+                        <i data-lucide="${overview.daily_usage?.near_limit ? 'alarm-clock' : 'clock'}"></i>
+                        <span>${overview.daily_usage?.remaining_minutes ?? 0} phút còn lại</span>
                     </span>
+                </div>
+                <div class="today-focus-grid">
+                    <div>
+                        <span>${usage.used_minutes ?? 0}</span>
+                        <small>phút đã học</small>
+                    </div>
+                    <div>
+                        <span>${usage.remaining_minutes ?? 0}</span>
+                        <small>phút còn lại</small>
+                    </div>
+                    <div>
+                        <span>${overview.alerts?.length || 0}</span>
+                        <small>việc cần xem</small>
+                    </div>
                 </div>
                 <div class="usage-line large">
                     <div>
@@ -110,7 +137,7 @@ function renderOverviewPanel(overview) {
                     <div class="usage-bar"><span style="width: ${usagePercent(overview.daily_usage)}%"></span></div>
                 </div>
                 <div class="insight-list">
-                    ${insights.length ? insights.map(line => `<p>${escapeHtml(line)}</p>`).join('') : '<p>Chưa có nhận xét mới từ hoạt động học gần đây.</p>'}
+                    ${insights.length ? insights.map(line => `<p><i data-lucide="sparkle"></i><span>${escapeHtml(line)}</span></p>`).join('') : '<p><i data-lucide="info"></i><span>Chưa có nhận xét mới từ hoạt động học gần đây.</span></p>'}
                 </div>
             </article>
 
@@ -134,20 +161,23 @@ function renderNextLessonPanel(overview) {
                         <p class="eyebrow">Đề xuất từ hệ thống</p>
                         <h2>${primary ? escapeHtml(primary.title || primary.label || 'Bài học tiếp theo') : 'Chờ dữ liệu đề xuất'}</h2>
                     </div>
-                    ${primary ? `<span class="priority ${escapeHtml(primary.priority || 'normal')}">${priorityLabel(primary.priority)}</span>` : ''}
+                    ${primary ? `<span class="priority ${escapeHtml(primary.priority || 'normal')}"><i data-lucide="flag"></i>${priorityLabel(primary.priority)}</span>` : ''}
                 </div>
                 ${primary ? `
                     <div class="recommendation-detail">
-                        <p><strong>Môn:</strong> ${escapeHtml(SUBJECT_LABELS[primary.subject] || primary.subject || 'Học tập')}</p>
-                        <p><strong>Lý do:</strong> ${reasonLabel(primary.reason)}</p>
-                        ${primary.skill_id ? `<p><strong>Kỹ năng:</strong> ${escapeHtml(labelCode(primary.skill_id))}</p>` : ''}
-                        ${primary.mastery_score !== undefined ? `<p><strong>Mức thành thạo:</strong> ${escapeHtml(primary.mastery_score)}%</p>` : ''}
+                        <p><i data-lucide="book-open"></i><span><strong>Môn:</strong> ${escapeHtml(SUBJECT_LABELS[primary.subject] || primary.subject || 'Học tập')}</span></p>
+                        <p><i data-lucide="lightbulb"></i><span><strong>Lý do:</strong> ${reasonLabel(primary.reason)}</span></p>
+                        ${primary.skill_id ? `<p><i data-lucide="target"></i><span><strong>Kỹ năng:</strong> ${escapeHtml(labelCode(primary.skill_id))}</span></p>` : ''}
+                        ${primary.mastery_score !== undefined ? `<p><i data-lucide="gauge"></i><span><strong>Mức thành thạo:</strong> ${escapeHtml(primary.mastery_score)}%</span></p>` : ''}
                     </div>
                 ` : '<p class="muted">Khi bé có thêm lịch sử học, hệ thống sẽ trả về đề xuất cụ thể hơn.</p>'}
             </article>
 
             <aside class="surface">
-                <h2>Tín hiệu sử dụng</h2>
+                <div class="section-head compact-head">
+                    <h2>Tín hiệu sử dụng</h2>
+                    <span class="soft-icon"><i data-lucide="radar"></i></span>
+                </div>
                 <div class="signal-list">
                     ${sourceSignals.length ? sourceSignals.map(signal => `<span>${escapeHtml(signal)}</span>`).join('') : '<p class="muted compact">Chưa có tín hiệu ưu tiên mạnh.</p>'}
                 </div>
@@ -172,7 +202,10 @@ function renderSubjectOverview(subject, summary = {}) {
                     <h2>${SUBJECT_LABELS[subject]}</h2>
                     <p>${enabled ? formatLevel(summary.level) : 'Đang tắt'}</p>
                 </div>
-                <span class="status-chip ${enabled ? 'ok' : 'muted-chip'}">${enabled ? 'Đang bật' : 'Đang tắt'}</span>
+                <span class="status-chip ${enabled ? 'ok' : 'muted-chip'}">
+                    <i data-lucide="${enabled ? 'circle-check' : 'circle-off'}"></i>
+                    <span>${enabled ? 'Đang bật' : 'Đang tắt'}</span>
+                </span>
             </div>
             <div class="metric-strip">
                 <div><strong>${summary.xp ?? 0}</strong><span>điểm XP</span></div>
@@ -203,7 +236,10 @@ function renderAlertsPanel(alerts) {
         <article class="surface alert-panel">
             <div class="section-head compact-head">
                 <h2>Thông báo thông minh</h2>
-                <span class="status-chip ${alerts.length ? 'warning' : 'ok'}">${alerts.length}</span>
+                <span class="status-chip ${alerts.length ? 'warning' : 'ok'}">
+                    <i data-lucide="${alerts.length ? 'triangle-alert' : 'shield-check'}"></i>
+                    <span>${alerts.length}</span>
+                </span>
             </div>
             <div class="alert-list">
                 ${alerts.length ? alerts.map(alert => `
@@ -249,8 +285,12 @@ function buildSourceSignals(overview) {
     return signals.slice(0, 8);
 }
 
-function tabButton(tab, label, activeTab) {
-    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-workspace-tab="${tab}" type="button">${label}</button>`;
+function tabButton(tab, label, activeTab, icon) {
+    return `<button class="tab-button ${tab === activeTab ? 'active' : ''}" data-workspace-tab="${tab}" type="button"><i data-lucide="${icon}"></i><span>${label}</span></button>`;
+}
+
+function childInitial(overview) {
+    return escapeHtml((overview.child?.full_name || state.currentChild.full_name || '?').trim().charAt(0).toUpperCase());
 }
 
 function usagePercent(usage = {}) {
