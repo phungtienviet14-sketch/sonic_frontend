@@ -273,7 +273,9 @@ function bindConfigEvents() {
 
     document.querySelectorAll('.preset-button').forEach(button => {
         button.addEventListener('click', () => {
+            const beforePreset = captureConfigSnapshot();
             applyPreset(button.getAttribute('data-preset'));
+            highlightPresetChanges(beforePreset);
             updatePreview();
             showToast(`Đã áp dụng preset ${button.querySelector('strong').innerText}`);
         });
@@ -295,8 +297,14 @@ function bindConfigEvents() {
         }
     });
 
-    document.getElementById('configForm').addEventListener('input', updatePreview);
-    document.getElementById('configForm').addEventListener('change', updatePreview);
+    document.getElementById('configForm').addEventListener('input', (event) => {
+        clearFieldHighlight(event.target);
+        updatePreview();
+    });
+    document.getElementById('configForm').addEventListener('change', (event) => {
+        clearFieldHighlight(event.target);
+        updatePreview();
+    });
     document.getElementById('configForm').addEventListener('submit', saveConfig);
 }
 
@@ -431,6 +439,42 @@ function setCheckedGroup(name, values) {
     document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
         input.checked = values.includes(input.value);
     });
+}
+
+function captureConfigSnapshot() {
+    const snapshot = new Map();
+    document.querySelectorAll('#configForm input, #configForm select, #configForm textarea').forEach(element => {
+        snapshot.set(element, fieldValue(element));
+    });
+    return snapshot;
+}
+
+function highlightPresetChanges(beforePreset) {
+    clearPresetHighlights();
+    beforePreset.forEach((previousValue, element) => {
+        if (fieldValue(element) !== previousValue) {
+            fieldHighlightTarget(element)?.classList.add('field-changed');
+        }
+    });
+}
+
+function clearPresetHighlights() {
+    document.querySelectorAll('.field-changed').forEach(element => {
+        element.classList.remove('field-changed');
+    });
+}
+
+function clearFieldHighlight(element) {
+    fieldHighlightTarget(element)?.classList.remove('field-changed');
+}
+
+function fieldHighlightTarget(element) {
+    return element?.closest('.checkbox-pill, .toggle-label, .form-group');
+}
+
+function fieldValue(element) {
+    if (element.type === 'checkbox') return element.checked ? 'checked' : 'unchecked';
+    return element.value;
 }
 
 function selectText(id) {

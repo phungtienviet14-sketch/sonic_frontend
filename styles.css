@@ -1134,6 +1134,11 @@ p {
     gap: 7px;
 }
 
+.form-group.field-changed label,
+.field-changed > span {
+    color: var(--blue);
+}
+
 label {
     color: var(--text-dark);
     font-size: 0.9rem;
@@ -1169,6 +1174,14 @@ textarea:focus {
     box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
+.form-group.field-changed input,
+.form-group.field-changed select,
+.form-group.field-changed textarea {
+    border-color: var(--blue);
+    background: rgba(37, 99, 235, 0.06);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 .toggle-label {
     display: inline-flex;
     align-items: center;
@@ -1179,6 +1192,13 @@ textarea:focus {
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--surface-soft);
+}
+
+.toggle-label.field-changed,
+.checkbox-pill.field-changed {
+    border-color: var(--blue);
+    background: rgba(37, 99, 235, 0.07);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
 .toggle-label input {
@@ -1208,6 +1228,10 @@ textarea:focus {
     background: var(--surface-soft);
     font-weight: 600;
     cursor: pointer;
+}
+
+.checkbox-pill.field-changed span {
+    color: var(--blue);
 }
 
 .checkbox-pill input {
