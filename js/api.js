@@ -150,4 +150,37 @@ export const api = {
             body: JSON.stringify(config),
         });
     },
+
+    // GĐ4a — Trí nhớ dài hạn theo bé
+    getChildMemory(userId) {
+        return this.request(`/children/${userId}/memory`);
+    },
+
+    deleteChildMemory(userId) {
+        return this.request(`/children/${userId}/memory`, { method: 'DELETE' });
+    },
+
+    // GĐ4b — Voiceprint (dữ liệu sinh trắc học, tuân thủ Nghị định 13)
+    getVoiceprintStatus(userId) {
+        return this.request(`/children/${userId}/voiceprint`);
+    },
+
+    getVoiceprintConsentText(userId) {
+        return this.request(`/children/${userId}/voiceprint/consent-text`);
+    },
+
+    grantVoiceprintConsent(userId, consentVersion) {
+        return this.request(`/children/${userId}/voiceprint/consent`, {
+            method: 'POST',
+            body: JSON.stringify({ consent_version: consentVersion, agreed: true }),
+        });
+    },
+
+    revokeVoiceprintConsent(userId) {
+        return this.request(`/children/${userId}/voiceprint/consent`, { method: 'DELETE' });
+    },
+
+    deleteVoiceprint(userId) {
+        return this.request(`/children/${userId}/voiceprint`, { method: 'DELETE' });
+    },
 };

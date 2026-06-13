@@ -1540,3 +1540,153 @@ textarea:focus {
         text-align: left;
     }
 }
+
+/* ====================================================================== */
+/* Quyền riêng tư & Bộ nhớ (trí nhớ GĐ4a + voiceprint GĐ4b)               */
+/* ====================================================================== */
+.btn-danger {
+    color: var(--danger);
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+.btn-danger:hover {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: var(--danger);
+}
+
+.privacy-intro {
+    color: var(--text-light);
+    margin: 4px 0 18px;
+    line-height: 1.6;
+}
+
+.privacy-card {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.privacy-note {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.privacy-fineprint {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.memory-body {
+    display: grid;
+    gap: 16px;
+}
+
+.memory-group {
+    display: grid;
+    gap: 8px;
+}
+
+.memory-group-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+.memory-group-label i[data-lucide] {
+    color: var(--teal);
+}
+
+.memory-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.memory-chip {
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.92rem;
+    color: var(--text-dark);
+}
+
+.privacy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.badge-soon {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--blue);
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+.consent-commitment {
+    display: grid;
+    gap: 10px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.consent-commitment p {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    color: var(--text-dark);
+    line-height: 1.5;
+}
+
+.consent-commitment i[data-lucide] {
+    color: var(--teal);
+    margin-top: 2px;
+}
+
+.consent-details summary {
+    cursor: pointer;
+    color: var(--blue);
+    font-weight: 600;
+    padding: 4px 0;
+}
+
+.consent-text {
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-light);
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.voice-enroll-state p {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text-dark);
+}
+
+.voice-enroll-state i[data-lucide] {
+    color: var(--teal);
+}

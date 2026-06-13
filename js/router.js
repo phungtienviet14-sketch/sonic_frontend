@@ -6,6 +6,7 @@ import { renderChildMenu } from './components/childMenu.js';
 import { renderConfig } from './components/config.js';
 import { renderDashboard, renderAddChildForm } from './components/dashboard.js';
 import { renderReport } from './components/report.js';
+import { renderPrivacy } from './components/privacy.js';
 import { escapeHtml, refreshIcons } from './utils.js';
 
 const CHILD_TABS = new Set(['overview', 'next']);
@@ -65,6 +66,13 @@ export async function routeCurrentPath() {
             return;
         }
 
+        if (route.type === 'privacy') {
+            if (await selectChild(route.childId)) {
+                await renderPrivacy();
+            }
+            return;
+        }
+
         replacePath(paths.dashboard());
         await renderDashboard();
     } catch (error) {
@@ -110,6 +118,9 @@ function parseRoute(pathname) {
                 childId,
                 section: CONFIG_SECTIONS.has(segments[3]) ? segments[3] : 'goals',
             };
+        }
+        if (segments[2] === 'privacy') {
+            return { type: 'privacy', childId };
         }
         return {
             type: 'child',
