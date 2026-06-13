@@ -11,30 +11,95 @@ const SUBJECT_LABELS = {
 };
 
 export async function renderDashboard() {
-    appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải dữ liệu...</p>`;
+    appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải danh sách bé...</p>`;
     try {
+        // B1: chỉ lấy danh sách bé (1 query nhanh) rồi VẼ SHELL NGAY — không chờ overview.
         state.childrenList = await api.getChildren();
-        const overviewPairs = await Promise.all(
-            state.childrenList.map(async child => {
-                try {
-                    return [child.user_id, await loadChildOverview(child)];
-                } catch (error) {
-                    console.warn('[Sonic cho ba mẹ] Không tải được tổng quan của bé', child.user_id, error);
-                    return [child.user_id, null];
-                }
-            })
-        );
-        state.overviewCache = Object.fromEntries(overviewPairs);
+        state.overviewCache = {};
+        renderDashboardShell([]);
 
-        const alerts = overviewPairs
-            .flatMap(([childId, overview]) => (overview?.alerts || []).map(alert => ({
-                ...alert,
-                childId,
-                childName: overview?.child?.full_name || childNameById(childId),
-            })))
-            .slice(0, 8);
+        // B2: tải overview từng bé SONG SONG, lấp card đó khi xong (không chặn toàn trang).
+        await Promise.all(state.childrenList.map(fillChildCard));
 
+        // B3: đủ dữ liệu -> cập nhật tiles tổng + chuông thông báo.
+        finalizeDashboardSummary();
+    } catch (error) {
         appElement.innerHTML = `
+            <main class="page-shell narrow">
+                <div class="surface error-panel">
+                    <h2>Không tải được dữ liệu</h2>
+                    <p>${escapeHtml(error.message)}</p>
+                    <button class="btn btn-primary" type="button" onclick="location.reload()">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>Thử lại</span>
+                    </button>
+                </div>
+            </main>
+        `;
+        refreshIcons();
+    }
+}
+
+async function fillChildCard(child) {
+    try {
+        const overview = await loadChildOverview(child);
+        state.overviewCache[child.user_id] = overview;
+    } catch (error) {
+        console.warn('[Sonic cho ba mẹ] Không tải được tổng quan của bé', child.user_id, error);
+        state.overviewCache[child.user_id] = null;
+    }
+    const slot = document.querySelector(`[data-child-card="${cssEscape(child.user_id)}"]`);
+    if (slot) {
+        slot.outerHTML = renderChildCard(child);
+        refreshIcons();
+    }
+}
+
+function finalizeDashboardSummary() {
+    const alerts = collectDashboardAlerts();
+    const badge = document.getElementById('notiBadge');
+    if (badge) {
+        badge.textContent = alerts.length;
+        badge.classList.toggle('hidden', !alerts.length);
+    }
+    const dropdown = document.querySelector('#notiDropdown .notification-list');
+    if (dropdown) {
+        dropdown.innerHTML = alerts.length
+            ? alerts.map(renderNotification).join('')
+            : '<p class="muted compact">Chưa có cảnh báo mới.</p>';
+    }
+    const banner = document.getElementById('priorityBannerSlot');
+    if (banner) banner.outerHTML = renderPriorityBanner(alerts);
+    const alertTile = document.getElementById('alertTileSlot');
+    if (alertTile) {
+        alertTile.outerHTML = renderSummaryTile('Cảnh báo cần xem', alerts.length, alerts.length ? 'triangle-alert' : 'shield-check', alerts.length ? 'amber' : 'green', alerts.length ? 'Ưu tiên hôm nay' : 'Mọi thứ ổn', 'alertTileSlot');
+    }
+    const cameraTile = document.getElementById('cameraTileSlot');
+    if (cameraTile) {
+        cameraTile.outerHTML = renderSummaryTile('Học qua máy ảnh', countCameraEnabled(), 'camera', 'teal', 'Đang bật', 'cameraTileSlot');
+    }
+    if (hasFallbackOverview() && !document.querySelector('.fallback-notice')) {
+        document.querySelector('.dashboard-summary')?.insertAdjacentHTML('afterend', renderFallbackNotice());
+    }
+    refreshIcons();
+}
+
+function collectDashboardAlerts() {
+    return Object.entries(state.overviewCache)
+        .flatMap(([childId, overview]) => (overview?.alerts || []).map(alert => ({
+            ...alert,
+            childId,
+            childName: overview?.child?.full_name || childNameById(childId),
+        })))
+        .slice(0, 8);
+}
+
+function cssEscape(value) {
+    return String(value).replace(/["\\]/g, '\\$&');
+}
+
+function renderDashboardShell(alerts) {
+    appElement.innerHTML = `
             <main class="page-shell">
                 <header class="app-header dashboard-hero">
                     <div class="header-copy">
@@ -63,11 +128,10 @@ export async function renderDashboard() {
 
                 <section class="dashboard-summary">
                     ${renderSummaryTile('Tổng hồ sơ bé', state.childrenList.length, 'users', 'blue', 'Đang theo dõi')}
-                    ${renderSummaryTile('Cảnh báo cần xem', alerts.length, alerts.length ? 'triangle-alert' : 'shield-check', alerts.length ? 'amber' : 'green', alerts.length ? 'Ưu tiên hôm nay' : 'Mọi thứ ổn')}
-                    ${renderSummaryTile('Học qua máy ảnh', countCameraEnabled(), 'camera', 'teal', 'Đang bật')}
+                    ${renderSummaryTile('Cảnh báo cần xem', '…', 'loader-circle', 'blue', 'Đang tổng hợp', 'alertTileSlot')}
+                    ${renderSummaryTile('Học qua máy ảnh', '…', 'camera', 'teal', 'Đang tổng hợp', 'cameraTileSlot')}
                 </section>
-                ${renderPriorityBanner(alerts)}
-                ${hasFallbackOverview() ? renderFallbackNotice() : ''}
+                <div id="priorityBannerSlot"></div>
 
                 <section class="child-grid">
                     ${state.childrenList.length ? state.childrenList.map(renderChildCard).join('') : renderEmptyState()}
@@ -77,58 +141,42 @@ export async function renderDashboard() {
             </main>
         `;
 
-        document.getElementById('logoutBtn').addEventListener('click', (event) => {
-            localStorage.removeItem('token');
-            navigateTo(event.currentTarget.getAttribute('data-path'), { replace: true });
-        });
+    document.getElementById('logoutBtn').addEventListener('click', (event) => {
+        localStorage.removeItem('token');
+        navigateTo(event.currentTarget.getAttribute('data-path'), { replace: true });
+    });
 
-        document.getElementById('notiBtn').addEventListener('click', () => {
-            document.getElementById('notiDropdown').classList.toggle('hidden');
-        });
+    document.getElementById('notiBtn').addEventListener('click', () => {
+        document.getElementById('notiDropdown').classList.toggle('hidden');
+    });
 
-        document.getElementById('addChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+    document.getElementById('addChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
-        document.querySelectorAll('.copy-id-btn').forEach(button => {
-            button.addEventListener('click', (event) => {
-                event.stopPropagation();
-                const id = button.getAttribute('data-id');
-                navigator.clipboard.writeText(id).then(() => {
-                    showToast(`Đã copy ID bé`);
-                }).catch(() => {
-                    showToast('Không thể copy ID', 'error');
-                });
-            });
-        });
+    // Event delegation trên child-grid: card thay HTML khi overview về vẫn không mất listener.
+    const grid = document.querySelector('.child-grid');
+    grid?.addEventListener('click', (event) => {
+        const copyBtn = event.target.closest('.copy-id-btn');
+        if (copyBtn) {
+            event.stopPropagation();
+            const id = copyBtn.getAttribute('data-id');
+            navigator.clipboard.writeText(id)
+                .then(() => showToast('Đã copy ID bé'))
+                .catch(() => showToast('Không thể copy ID', 'error'));
+            return;
+        }
+        const nextBtn = event.target.closest('.next-lesson-btn');
+        if (nextBtn) {
+            event.stopPropagation();
+            navigateTo(nextBtn.getAttribute('data-path'));
+            return;
+        }
+        const card = event.target.closest('.child-card');
+        if (card && card.getAttribute('data-path')) {
+            navigateTo(card.getAttribute('data-path'));
+        }
+    });
 
-        document.querySelectorAll('.next-lesson-btn').forEach(button => {
-            button.addEventListener('click', (event) => {
-                event.stopPropagation();
-                navigateTo(button.getAttribute('data-path'));
-            });
-        });
-
-        document.querySelectorAll('.child-card').forEach(card => {
-            card.addEventListener('click', () => {
-                navigateTo(card.getAttribute('data-path'));
-            });
-        });
-
-        refreshIcons();
-    } catch (error) {
-        appElement.innerHTML = `
-            <main class="page-shell narrow">
-                <div class="surface error-panel">
-                    <h2>Không tải được dữ liệu</h2>
-                    <p>${escapeHtml(error.message)}</p>
-                    <button class="btn btn-primary" type="button" onclick="location.reload()">
-                        <i data-lucide="refresh-cw"></i>
-                        <span>Thử lại</span>
-                    </button>
-                </div>
-            </main>
-        `;
-        refreshIcons();
-    }
+    refreshIcons();
 }
 
 export function renderAddChildForm() {
@@ -195,18 +243,41 @@ export function renderAddChildForm() {
 }
 
 function renderChildCard(child) {
+    const initials = escapeHtml((child.full_name || '?').trim().charAt(0).toUpperCase());
+    const cardId = escapeHtml(child.user_id);
+    const cardPath = paths.child(child.user_id, 'overview');
+
+    // Chưa nạp overview (đang tải) -> card skeleton, vẫn bấm vào được.
+    if (!(child.user_id in state.overviewCache)) {
+        return `
+            <article class="surface child-card loading" data-child-card="${cardId}" data-id="${cardId}" data-path="${cardPath}">
+                <div class="child-card-head">
+                    <div class="avatar">${initials}</div>
+                    <div class="child-title">
+                        <h2>${escapeHtml(child.full_name)}</h2>
+                        <div class="meta-row"><span>${escapeHtml(child.age)} tuổi</span></div>
+                    </div>
+                    <span class="status-chip muted-chip"><i data-lucide="loader-circle"></i><span>Đang tải</span></span>
+                </div>
+                <div class="card-loading-body">
+                    <div class="loader small"></div>
+                    <p class="muted compact">Đang tải số liệu học tập...</p>
+                </div>
+            </article>
+        `;
+    }
+
     const overview = state.overviewCache[child.user_id];
     const english = overview?.subjects?.english || {};
     const math = overview?.subjects?.math || {};
     const usage = overview?.daily_usage || {};
     const alerts = overview?.alerts || [];
-    const initials = escapeHtml((child.full_name || '?').trim().charAt(0).toUpperCase());
     const nextAlert = alerts[0];
     const usedMinutes = usage.used_minutes ?? 0;
     const dailyLimit = usage.daily_limit_minutes ?? 30;
 
     return `
-        <article class="surface child-card" data-id="${escapeHtml(child.user_id)}" data-path="${paths.child(child.user_id, 'overview')}">
+        <article class="surface child-card" data-child-card="${cardId}" data-id="${cardId}" data-path="${cardPath}">
             <div class="child-card-head">
                 <div class="avatar">${initials}</div>
                 <div class="child-title">
@@ -300,9 +371,9 @@ function renderAlertLine(alert) {
     return `<p class="${escapeHtml(alert.severity || 'medium')}">${escapeHtml(alert.message || '')}</p>`;
 }
 
-function renderSummaryTile(label, value, icon, tone, caption) {
+function renderSummaryTile(label, value, icon, tone, caption, id = '') {
     return `
-        <div class="summary-tile ${escapeHtml(tone)}">
+        <div class="summary-tile ${escapeHtml(tone)}"${id ? ` id="${id}"` : ''}>
             <span class="summary-icon"><i data-lucide="${escapeHtml(icon)}"></i></span>
             <div>
                 <strong>${escapeHtml(value)}</strong>

@@ -1327,6 +1327,31 @@ textarea:focus {
     }
 }
 
+.loader.small {
+    width: 22px;
+    height: 22px;
+    border-width: 3px;
+    margin: 0;
+}
+
+/* Card bé đang tải overview (dashboard render tiến trình) */
+.child-card.loading {
+    opacity: 0.92;
+}
+
+.card-loading-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 4px 6px;
+    color: var(--text-light);
+}
+
+.summary-tile .summary-icon .lucide-loader-circle,
+.status-chip .lucide-loader-circle {
+    animation: spin 1s linear infinite;
+}
+
 .toast {
     position: fixed;
     left: 50%;

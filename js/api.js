@@ -127,8 +127,11 @@ export const api = {
 
     async getReport(userId) {
         try {
-            const english = await this.request(`/children/${userId}/progress/english`);
-            const math = await this.request(`/children/${userId}/progress/math`);
+            // Hai môn độc lập -> tải SONG SONG (trước đây tuần tự, gấp đôi thời gian chờ).
+            const [english, math] = await Promise.all([
+                this.request(`/children/${userId}/progress/english`),
+                this.request(`/children/${userId}/progress/math`),
+            ]);
             return { english, math };
         } catch (error) {
             console.error('Lỗi tải báo cáo:', error);
