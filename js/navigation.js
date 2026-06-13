@@ -7,6 +7,7 @@ export const paths = {
     report: (childId, tab = 'overview') => `/children/${encodeURIComponent(childId)}/report/${tab}`,
     config: (childId, section = 'goals') => `/children/${encodeURIComponent(childId)}/config/${section}`,
     privacy: (childId) => `/children/${encodeURIComponent(childId)}/privacy`,
+    editChild: (childId) => `/children/${encodeURIComponent(childId)}/edit`,
 };
 
 export function navigateTo(path, { replace = false } = {}) {

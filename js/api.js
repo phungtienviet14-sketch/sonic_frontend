@@ -125,6 +125,13 @@ export const api = {
         });
     },
 
+    updateChild(userId, childData) {
+        return this.request(`/children/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify(childData),
+        });
+    },
+
     async getReport(userId) {
         try {
             // Hai môn độc lập -> tải SONG SONG (trước đây tuần tự, gấp đôi thời gian chờ).

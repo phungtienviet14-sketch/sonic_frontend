@@ -242,6 +242,78 @@ export function renderAddChildForm() {
     });
 }
 
+export function renderEditChildForm() {
+    if (!state.currentChild) {
+        navigateTo(paths.dashboard(), { replace: true });
+        return;
+    }
+    const child = state.currentChild;
+    appElement.innerHTML = `
+        <main class="page-shell narrow">
+            <header class="app-header simple">
+                <div>
+                    <p class="eyebrow">Hồ sơ bé</p>
+                    <h1>Sửa hồ sơ bé</h1>
+                </div>
+                <button id="backBtn" class="btn btn-outline btn-inline" data-path="${paths.child(child.user_id)}" type="button">
+                    <i data-lucide="arrow-left"></i>
+                    <span>Trở lại</span>
+                </button>
+            </header>
+            <form id="editChildForm" class="surface form-surface">
+                <div class="form-group">
+                    <label for="childName">Họ và tên bé</label>
+                    <input type="text" id="childName" value="${escapeHtml(child.full_name || '')}" placeholder="Nguyễn Bảo An" required>
+                </div>
+                <div class="form-group">
+                    <label for="childAge">Tuổi</label>
+                    <input type="number" id="childAge" value="${escapeHtml(child.age ?? '')}" placeholder="5" min="1" max="18" required>
+                </div>
+                <div id="editChildError" class="hidden form-message danger"></div>
+                <div id="editChildSuccess" class="hidden form-message success"></div>
+                <button type="submit" class="btn btn-primary" id="editChildSubmitBtn">
+                    <i data-lucide="save"></i>
+                    <span>Lưu thay đổi</span>
+                </button>
+            </form>
+        </main>
+    `;
+
+    document.getElementById('backBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+    refreshIcons();
+    document.getElementById('editChildForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const button = document.getElementById('editChildSubmitBtn');
+        const errorDiv = document.getElementById('editChildError');
+        const successDiv = document.getElementById('editChildSuccess');
+        const fullName = document.getElementById('childName').value.trim();
+        const age = parseInt(document.getElementById('childAge').value, 10);
+
+        button.innerHTML = '<i data-lucide="loader-circle"></i><span>Đang lưu...</span>';
+        button.disabled = true;
+        refreshIcons();
+        errorDiv.classList.add('hidden');
+        successDiv.classList.add('hidden');
+
+        try {
+            await api.updateChild(child.user_id, { full_name: fullName, age });
+            // Cập nhật state cục bộ để các trang khác thấy ngay (không cần tải lại).
+            child.full_name = fullName;
+            child.age = age;
+            state.overviewCache[child.user_id] = null;
+            successDiv.innerText = `Đã cập nhật hồ sơ bé ${fullName}.`;
+            successDiv.classList.remove('hidden');
+            setTimeout(() => navigateTo(paths.child(child.user_id), { replace: true }), 700);
+        } catch (error) {
+            errorDiv.innerText = error.message;
+            errorDiv.classList.remove('hidden');
+            button.innerHTML = '<i data-lucide="save"></i><span>Lưu thay đổi</span>';
+            button.disabled = false;
+            refreshIcons();
+        }
+    });
+}
+
 function renderChildCard(child) {
     const initials = escapeHtml((child.full_name || '?').trim().charAt(0).toUpperCase());
     const cardId = escapeHtml(child.user_id);

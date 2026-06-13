@@ -4,7 +4,7 @@ import { state } from './state.js';
 import { appElement, renderLogin } from './components/auth.js';
 import { renderChildMenu } from './components/childMenu.js';
 import { renderConfig } from './components/config.js';
-import { renderDashboard, renderAddChildForm } from './components/dashboard.js';
+import { renderDashboard, renderAddChildForm, renderEditChildForm } from './components/dashboard.js';
 import { renderReport } from './components/report.js';
 import { renderPrivacy } from './components/privacy.js';
 import { escapeHtml, refreshIcons } from './utils.js';
@@ -73,6 +73,13 @@ export async function routeCurrentPath() {
             return;
         }
 
+        if (route.type === 'edit-child') {
+            if (await selectChild(route.childId)) {
+                renderEditChildForm();
+            }
+            return;
+        }
+
         replacePath(paths.dashboard());
         await renderDashboard();
     } catch (error) {
@@ -121,6 +128,9 @@ function parseRoute(pathname) {
         }
         if (segments[2] === 'privacy') {
             return { type: 'privacy', childId };
+        }
+        if (segments[2] === 'edit') {
+            return { type: 'edit-child', childId };
         }
         return {
             type: 'child',

@@ -32,6 +32,10 @@ export async function renderChildMenu(activeTab = 'overview') {
                         <div>
                             <p class="eyebrow">Không gian học tập</p>
                             <h1>${escapeHtml(overview.child?.full_name || state.currentChild.full_name)}</h1>
+                            <button id="editChildBtn" class="link-button" data-path="${paths.editChild(state.currentChild.user_id)}" type="button">
+                                <i data-lucide="pencil"></i>
+                                <span>Sửa tên / tuổi</span>
+                            </button>
                         </div>
                     </div>
                     <div class="workspace-kpis">
@@ -60,6 +64,7 @@ export async function renderChildMenu(activeTab = 'overview') {
         document.getElementById('openReportBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openConfigBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openPrivacyBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+        document.getElementById('editChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         refreshIcons();
     } catch (error) {
         appElement.innerHTML = `
