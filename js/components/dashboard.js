@@ -113,6 +113,10 @@ function renderDashboardShell(alerts) {
                             <span>Thông báo</span>
                             <span id="notiBadge" class="badge ${alerts.length ? '' : 'hidden'}">${alerts.length}</span>
                         </button>
+                        <button id="accountBtn" class="btn btn-outline btn-inline" data-path="${paths.account()}" type="button">
+                            <i data-lucide="user-cog"></i>
+                            <span>Tài khoản</span>
+                        </button>
                         <button id="logoutBtn" class="btn btn-outline btn-inline" data-path="${paths.login()}" type="button">
                             <i data-lucide="log-out"></i>
                             <span>Đăng xuất</span>
@@ -149,6 +153,8 @@ function renderDashboardShell(alerts) {
     document.getElementById('notiBtn').addEventListener('click', () => {
         document.getElementById('notiDropdown').classList.toggle('hidden');
     });
+
+    document.getElementById('accountBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
     document.getElementById('addChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
@@ -276,10 +282,22 @@ export function renderEditChildForm() {
                     <span>Lưu thay đổi</span>
                 </button>
             </form>
+
+            <section class="surface danger-zone">
+                <div>
+                    <strong>Xóa hồ sơ bé</strong>
+                    <p class="muted compact">Xóa vĩnh viễn hồ sơ và toàn bộ dữ liệu học, trò chuyện, trí nhớ của bé. Không hoàn tác được.</p>
+                </div>
+                <button id="deleteChildBtn" class="btn btn-outline btn-danger" type="button">
+                    <i data-lucide="trash-2"></i>
+                    <span>Xóa hồ sơ</span>
+                </button>
+            </section>
         </main>
     `;
 
     document.getElementById('backBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+    document.getElementById('deleteChildBtn').addEventListener('click', () => handleDeleteChild(child));
     refreshIcons();
     document.getElementById('editChildForm').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -312,6 +330,27 @@ export function renderEditChildForm() {
             refreshIcons();
         }
     });
+}
+
+async function handleDeleteChild(child) {
+    if (!confirm(`Xóa vĩnh viễn hồ sơ bé "${child.full_name}" và toàn bộ dữ liệu? Không hoàn tác được.`)) return;
+    const typed = prompt(`Để xác nhận, gõ đúng tên bé: ${child.full_name}`);
+    if (typed === null) return;
+    if (typed.trim() !== (child.full_name || '').trim()) {
+        showToast('Tên không khớp, đã hủy xóa', 'error');
+        return;
+    }
+    try {
+        await api.deleteChild(child.user_id);
+        // Dọn state cục bộ để dashboard không còn bé này.
+        state.childrenList = state.childrenList.filter(c => String(c.user_id) !== String(child.user_id));
+        delete state.overviewCache[child.user_id];
+        state.currentChild = null;
+        showToast(`Đã xóa hồ sơ bé ${child.full_name}`);
+        navigateTo(paths.dashboard(), { replace: true });
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
 }
 
 function renderChildCard(child) {

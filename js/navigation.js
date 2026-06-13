@@ -8,6 +8,8 @@ export const paths = {
     config: (childId, section = 'goals') => `/children/${encodeURIComponent(childId)}/config/${section}`,
     privacy: (childId) => `/children/${encodeURIComponent(childId)}/privacy`,
     editChild: (childId) => `/children/${encodeURIComponent(childId)}/edit`,
+    connect: (childId) => `/children/${encodeURIComponent(childId)}/connect`,
+    account: () => '/account',
 };
 
 export function navigateTo(path, { replace = false } = {}) {

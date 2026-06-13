@@ -49,6 +49,7 @@ export async function renderChildMenu(activeTab = 'overview') {
                     ${tabButton('next', 'Bài học tiếp theo', activeTab, 'circle-arrow-right')}
                     <button class="tab-button" id="openReportBtn" data-path="${paths.report(state.currentChild.user_id)}" type="button"><i data-lucide="chart-column"></i><span>Báo cáo</span></button>
                     <button class="tab-button" id="openConfigBtn" data-path="${paths.config(state.currentChild.user_id)}" type="button"><i data-lucide="sliders-horizontal"></i><span>Cấu hình</span></button>
+                    <button class="tab-button" id="openConnectBtn" data-path="${paths.connect(state.currentChild.user_id)}" type="button"><i data-lucide="qr-code"></i><span>Kết nối robot</span></button>
                     <button class="tab-button" id="openPrivacyBtn" data-path="${paths.privacy(state.currentChild.user_id)}" type="button"><i data-lucide="shield-check"></i><span>Quyền riêng tư</span></button>
                 </nav>
                 ${overview.source === 'fallback_progress_report' ? renderFallbackNotice() : ''}
@@ -63,6 +64,7 @@ export async function renderChildMenu(activeTab = 'overview') {
         });
         document.getElementById('openReportBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openConfigBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+        document.getElementById('openConnectBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openPrivacyBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('editChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         refreshIcons();

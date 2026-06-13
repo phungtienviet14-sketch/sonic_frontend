@@ -1715,3 +1715,112 @@ textarea:focus {
 .voice-enroll-state i[data-lucide] {
     color: var(--teal);
 }
+
+/* ====================================================================== */
+/* Tài khoản phụ huynh + Kết nối robot + Vùng nguy hiểm                    */
+/* ====================================================================== */
+.account-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.account-avatar {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--teal), var(--blue));
+}
+
+.account-info h2 {
+    margin: 0;
+}
+
+.provider-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--text-light);
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+.connect-id-card {
+    text-align: center;
+    display: grid;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.connect-id {
+    font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    word-break: break-all;
+    color: var(--text-dark);
+    background: var(--surface-soft);
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.connect-steps {
+    list-style: none;
+    display: grid;
+    gap: 16px;
+    margin: 6px 0 0;
+    padding: 0;
+}
+
+.connect-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.connect-steps .step-num {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    color: #fff;
+    background: var(--teal);
+}
+
+.connect-steps strong {
+    display: block;
+}
+
+.connect-steps p {
+    margin: 2px 0 0;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+
+.danger-zone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.danger-zone strong {
+    color: var(--danger);
+}

@@ -132,6 +132,21 @@ export const api = {
         });
     },
 
+    deleteChild(userId) {
+        return this.request(`/children/${userId}`, { method: 'DELETE' });
+    },
+
+    getMe() {
+        return this.request('/me');
+    },
+
+    changePassword(currentPassword, newPassword) {
+        return this.request('/me/change-password', {
+            method: 'POST',
+            body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+        });
+    },
+
     async getReport(userId) {
         try {
             // Hai môn độc lập -> tải SONG SONG (trước đây tuần tự, gấp đôi thời gian chờ).

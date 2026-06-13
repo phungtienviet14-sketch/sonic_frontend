@@ -7,6 +7,8 @@ import { renderConfig } from './components/config.js';
 import { renderDashboard, renderAddChildForm, renderEditChildForm } from './components/dashboard.js';
 import { renderReport } from './components/report.js';
 import { renderPrivacy } from './components/privacy.js';
+import { renderConnect } from './components/connect.js';
+import { renderAccount } from './components/account.js';
 import { escapeHtml, refreshIcons } from './utils.js';
 
 const CHILD_TABS = new Set(['overview', 'next']);
@@ -37,6 +39,11 @@ export async function routeCurrentPath() {
     try {
         if (route.type === 'dashboard') {
             await renderDashboard();
+            return;
+        }
+
+        if (route.type === 'account') {
+            await renderAccount();
             return;
         }
 
@@ -80,6 +87,13 @@ export async function routeCurrentPath() {
             return;
         }
 
+        if (route.type === 'connect') {
+            if (await selectChild(route.childId)) {
+                renderConnect();
+            }
+            return;
+        }
+
         replacePath(paths.dashboard());
         await renderDashboard();
     } catch (error) {
@@ -105,6 +119,7 @@ function parseRoute(pathname) {
     if (segments[0] === 'login') return { type: 'login' };
     if (segments[0] === 'register') return { type: 'register' };
     if (segments[0] === 'dashboard') return { type: 'dashboard' };
+    if (segments[0] === 'account') return { type: 'account' };
 
     if (segments[0] === 'children' && segments[1] === 'new') {
         return { type: 'add-child' };
@@ -131,6 +146,9 @@ function parseRoute(pathname) {
         }
         if (segments[2] === 'edit') {
             return { type: 'edit-child', childId };
+        }
+        if (segments[2] === 'connect') {
+            return { type: 'connect', childId };
         }
         return {
             type: 'child',
