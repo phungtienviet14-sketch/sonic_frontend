@@ -79,7 +79,7 @@ function renderOverviewTab(english, math) {
             <article class="surface chart-panel">
                 <div class="section-head">
                     <div>
-                        <p class="eyebrow">Lượt làm, điểm và XP</p>
+                        <p class="eyebrow">Hôm nay so với cả tuần</p>
                         <h2>Nhịp tiến bộ</h2>
                     </div>
                 </div>
@@ -309,34 +309,38 @@ function renderLearningChart(english, math) {
     if (window.sonicParentReportChart) {
         window.sonicParentReportChart.destroy();
     }
-    const englishAttempts = english?.daily_summary?.attempts || {};
-    const mathAttempts = math?.daily_summary?.attempts || {};
+    // D2: so sánh HÔM NAY vs TUẦN NÀY cho từng môn (dùng daily_summary + weekly_summary
+    // đã có sẵn trong báo cáo — không cần endpoint backend mới).
+    const enDay = english?.daily_summary?.attempts || {};
+    const enWeek = english?.weekly_summary?.attempts || {};
+    const mathDay = math?.daily_summary?.attempts || {};
+    const mathWeek = math?.weekly_summary?.attempts || {};
 
     window.sonicParentReportChart = new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['Lượt làm hôm nay', 'Đúng hôm nay', 'Điểm trung bình', 'XP'],
+            labels: ['Lượt làm · Anh', 'Lượt làm · Toán', 'Câu đúng · Anh', 'Câu đúng · Toán'],
             datasets: [
                 {
-                    label: 'Tiếng Anh',
+                    label: 'Hôm nay',
                     data: [
-                        englishAttempts.answered_attempts || 0,
-                        englishAttempts.correct_attempts || 0,
-                        english?.daily_summary?.average_score || 0,
-                        english?.level_info?.total_xp || 0,
+                        enDay.answered_attempts || 0,
+                        mathDay.answered_attempts || 0,
+                        enDay.correct_attempts || 0,
+                        mathDay.correct_attempts || 0,
                     ],
-                    backgroundColor: 'rgba(37, 99, 235, 0.72)',
+                    backgroundColor: 'rgba(37, 99, 235, 0.78)',
                     borderRadius: 4,
                 },
                 {
-                    label: 'Toán',
+                    label: 'Tuần này',
                     data: [
-                        mathAttempts.answered_attempts || 0,
-                        mathAttempts.correct_attempts || 0,
-                        math?.daily_summary?.average_score || 0,
-                        math?.level_info?.total_xp || 0,
+                        enWeek.answered_attempts || 0,
+                        mathWeek.answered_attempts || 0,
+                        enWeek.correct_attempts || 0,
+                        mathWeek.correct_attempts || 0,
                     ],
-                    backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                    backgroundColor: 'rgba(148, 163, 184, 0.6)',
                     borderRadius: 4,
                 },
             ],

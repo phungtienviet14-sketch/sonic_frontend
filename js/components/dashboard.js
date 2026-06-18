@@ -275,6 +275,11 @@ export function renderEditChildForm() {
                     <label for="childAge">Tuổi</label>
                     <input type="number" id="childAge" value="${escapeHtml(child.age ?? '')}" placeholder="5" min="1" max="18" required>
                 </div>
+                <div class="form-group">
+                    <label for="childNote">Ghi chú cho robot về bé <span class="muted">(tùy chọn)</span></label>
+                    <textarea id="childNote" rows="2" maxlength="500" placeholder="VD: con thích khủng long, cần luyện phát âm R, sợ tiếng động lớn...">${escapeHtml(child.weak_points || '')}</textarea>
+                    <small class="muted">Robot dùng để trò chuyện hợp bé hơn.</small>
+                </div>
                 <div id="editChildError" class="hidden form-message danger"></div>
                 <div id="editChildSuccess" class="hidden form-message success"></div>
                 <button type="submit" class="btn btn-primary" id="editChildSubmitBtn">
@@ -306,6 +311,7 @@ export function renderEditChildForm() {
         const successDiv = document.getElementById('editChildSuccess');
         const fullName = document.getElementById('childName').value.trim();
         const age = parseInt(document.getElementById('childAge').value, 10);
+        const weakPoints = document.getElementById('childNote').value.trim();
 
         button.innerHTML = '<i data-lucide="loader-circle"></i><span>Đang lưu...</span>';
         button.disabled = true;
@@ -314,10 +320,11 @@ export function renderEditChildForm() {
         successDiv.classList.add('hidden');
 
         try {
-            await api.updateChild(child.user_id, { full_name: fullName, age });
+            await api.updateChild(child.user_id, { full_name: fullName, age, weak_points: weakPoints });
             // Cập nhật state cục bộ để các trang khác thấy ngay (không cần tải lại).
             child.full_name = fullName;
             child.age = age;
+            child.weak_points = weakPoints;
             state.overviewCache[child.user_id] = null;
             successDiv.innerText = `Đã cập nhật hồ sơ bé ${fullName}.`;
             successDiv.classList.remove('hidden');
