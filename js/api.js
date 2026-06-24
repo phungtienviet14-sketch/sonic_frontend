@@ -185,7 +185,7 @@ export const api = {
         return this.request(`/children/${userId}/memory`, { method: 'DELETE' });
     },
 
-    // GĐ4b — Voiceprint (dữ liệu sinh trắc học, tuân thủ Nghị định 13)
+    // GĐ4b — Voiceprint (dữ liệu sinh trắc học; Luật BVDLCN 2025 + NĐ 356/2025)
     getVoiceprintStatus(userId) {
         return this.request(`/children/${userId}/voiceprint`);
     },
@@ -194,10 +194,14 @@ export const api = {
         return this.request(`/children/${userId}/voiceprint/consent-text`);
     },
 
-    grantVoiceprintConsent(userId, consentVersion) {
+    grantVoiceprintConsent(userId, consentVersion, childAssentAttested = false) {
         return this.request(`/children/${userId}/voiceprint/consent`, {
             method: 'POST',
-            body: JSON.stringify({ consent_version: consentVersion, agreed: true }),
+            body: JSON.stringify({
+                consent_version: consentVersion,
+                agreed: true,
+                child_assent_attested: childAssentAttested,
+            }),
         });
     },
 

@@ -114,14 +114,20 @@ function renderVoiceCard(status) {
                     <p><i data-lucide="shield-check"></i><span>Chỉ bật khi ba mẹ đồng ý rõ ràng.</span></p>
                     <p><i data-lucide="file-lock-2"></i><span>Chỉ lưu "đặc trưng giọng" (dãy số), <strong>không lưu đoạn ghi âm gốc</strong>.</span></p>
                     <p><i data-lucide="trash-2"></i><span>Ba mẹ rút đồng ý là dữ liệu giọng bị xóa ngay.</span></p>
+                    <p><i data-lucide="info"></i><span><strong>Không bắt buộc để dùng robot</strong> — bé vẫn dùng bình thường nếu ba mẹ không bật.</span></p>
                 </div>
-                <p class="privacy-fineprint">Tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</p>
+                <p class="privacy-fineprint">Tuân thủ Luật Bảo vệ dữ liệu cá nhân 2025 và Nghị định 356/2025/NĐ-CP.</p>
             </section>
         `;
     }
 
     const consentActive = status.consent_active;
     const enrolled = status.enrolled;
+    // 5 trạng thái vòng đời: chưa bật (status null, nhánh trên) · chưa đồng ý (sau rút) ·
+    // đã đồng ý chưa ghi giọng (sau xóa giọng) · đã ghi giọng.
+    const stateLabel = !consentActive
+        ? 'Chưa đồng ý'
+        : (enrolled ? `Đã ghi giọng (${status.sample_count} mẫu)` : 'Đã đồng ý — chưa ghi giọng');
     return `
         <section class="surface privacy-card">
             <div class="section-head compact-head">
@@ -134,7 +140,8 @@ function renderVoiceCard(status) {
                     <span>${consentActive ? 'Đã đồng ý' : 'Chưa đồng ý'}</span>
                 </span>
             </div>
-            <p class="privacy-note">Giúp robot nhận ra giọng của từng bé khi nhiều bé dùng chung robot. Đây là dữ liệu sinh trắc học — cần ba mẹ đồng ý theo Nghị định 13/2023.</p>
+            <p class="privacy-note">Giúp robot nhận ra giọng của từng bé khi nhiều bé dùng chung robot. Đây là dữ liệu sinh trắc học — cần ba mẹ đồng ý theo Luật Bảo vệ dữ liệu cá nhân 2025 + Nghị định 356/2025. <strong>Không bắt buộc để dùng robot</strong> — bé vẫn dùng bình thường nếu ba mẹ không bật.</p>
+            <p class="voice-state-line"><i data-lucide="info"></i><span>Trạng thái hiện tại: <strong>${stateLabel}</strong></span></p>
 
             <details class="consent-details">
                 <summary>Đọc cam kết quyền riêng tư</summary>
@@ -150,7 +157,11 @@ function renderVoiceCard(status) {
                     <button id="revokeConsentBtn" class="btn btn-outline btn-danger" type="button"><i data-lucide="shield-x"></i><span>Rút đồng ý & xóa</span></button>
                 </div>
             ` : `
-                <div class="privacy-actions">
+                <div class="privacy-actions voice-grant">
+                    <label class="assent-check">
+                        <input type="checkbox" id="childAssentCheck" />
+                        <span>Với bé từ 7 tuổi: tôi xác nhận đã giải thích và hỏi ý kiến của bé. (Không bắt buộc với bé nhỏ hơn.)</span>
+                    </label>
                     <button id="grantConsentBtn" class="btn btn-primary" type="button" data-version="">
                         <i data-lucide="shield-check"></i>
                         <span>Đồng ý cho nhận diện giọng</span>
@@ -189,7 +200,7 @@ function bindPrivacyEvents(childId) {
             target.textContent = data.text || 'Không tải được nội dung.';
             target.dataset.loaded = '1';
             const grantBtn = document.getElementById('grantConsentBtn');
-            if (grantBtn) grantBtn.dataset.version = data.version || '1.0';
+            if (grantBtn) grantBtn.dataset.version = data.version || '1.1';
         } catch {
             target.textContent = 'Không tải được nội dung cam kết.';
         }
@@ -200,14 +211,15 @@ function bindPrivacyEvents(childId) {
         if (!version) {
             try {
                 const data = await api.getVoiceprintConsentText(childId);
-                version = data.version || '1.0';
+                version = data.version || '1.1';
             } catch {
-                version = '1.0';
+                version = '1.1';
             }
         }
         if (!confirm('Ba mẹ xác nhận đồng ý cho robot nhận diện giọng nói của bé theo cam kết quyền riêng tư?')) return;
+        const childAssent = document.getElementById('childAssentCheck')?.checked || false;
         try {
-            await api.grantVoiceprintConsent(childId, version);
+            await api.grantVoiceprintConsent(childId, version, childAssent);
             showToast('Đã ghi nhận đồng ý');
             renderPrivacy();
         } catch (error) {
