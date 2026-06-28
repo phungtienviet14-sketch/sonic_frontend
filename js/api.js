@@ -225,6 +225,11 @@ export const api = {
         return data.templates || [];
     },
 
+    async getTemplateWords(lessonId) {
+        const data = await this.request(`/lessons/templates/${lessonId}/words`);
+        return data.words || [];
+    },
+
     async searchVocabulary(q = '', topic = '', level = '') {
         const params = new URLSearchParams();
         if (q) params.set('q', q);

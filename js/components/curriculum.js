@@ -16,12 +16,29 @@ let editTitle = '';          // tên bài đang sửa
 let searchResults = [];
 let searchQuery = '';
 
+// Builder "Tạo / thêm chủ đề": nạp từ bài mẫu (+ tên) rồi tìm thêm từ và tạo.
+let builderTitle = '';
+let builderWords = [];       // [{word_id, word, meaning_vi}]
+let builderResults = [];
+let builderQuery = '';
+
 function captureEditorInputs() {
-    // Giữ giá trị đang gõ qua các lần re-render (tìm từ / thêm / bớt).
-    const titleInput = document.getElementById('editLessonTitle');
-    if (titleInput) editTitle = titleInput.value;
-    const searchInput = document.getElementById('vocabSearch');
-    if (searchInput) searchQuery = searchInput.value;
+    // Giữ giá trị đang gõ qua các lần re-render (editor + builder).
+    const editTitleEl = document.getElementById('editLessonTitle');
+    if (editTitleEl) editTitle = editTitleEl.value;
+    const editSearchEl = document.getElementById('vocabSearch');
+    if (editSearchEl) searchQuery = editSearchEl.value;
+    const builderTitleEl = document.getElementById('builderTitle');
+    if (builderTitleEl) builderTitle = builderTitleEl.value;
+    const builderSearchEl = document.getElementById('builderSearch');
+    if (builderSearchEl) builderQuery = builderSearchEl.value;
+}
+
+function resetBuilder() {
+    builderTitle = '';
+    builderWords = [];
+    builderResults = [];
+    builderQuery = '';
 }
 
 export async function renderCurriculum() {
@@ -36,6 +53,7 @@ export async function renderCurriculum() {
         editWords = [];
         searchResults = [];
         searchQuery = '';
+        resetBuilder();
         paint();
     } catch (error) {
         appElement.innerHTML = `
@@ -90,31 +108,46 @@ function paint() {
 }
 
 function renderAddLessonPanel() {
-    const options = _data.templates
-        .map(t => `<option value="${escapeHtml(t.lesson_id)}">${escapeHtml(t.title)} (${escapeHtml(t.level)})</option>`)
+    const options = ['<option value="">— Chọn bài mẫu để nạp từ (tùy chọn) —</option>']
+        .concat(_data.templates.map(t =>
+            `<option value="${escapeHtml(t.lesson_id)}">${escapeHtml(t.title)} (${escapeHtml(t.level)})</option>`))
+        .join('');
+    const chips = builderWords
+        .map(w => `<span class="word-chip">${escapeHtml(w.word)} <small>(${escapeHtml(w.meaning_vi || '')})</small> <button data-action="builder-remove-word" data-word="${escapeHtml(w.word_id)}" type="button" aria-label="Bỏ từ">×</button></span>`)
+        .join('');
+    const results = builderResults
+        .map(w => `<button class="btn btn-outline btn-inline" data-action="builder-add-word" data-word="${escapeHtml(w.word_id)}" type="button">+ ${escapeHtml(w.word)} <small>(${escapeHtml(w.meaning_vi || '')})</small></button>`)
         .join('');
     return `
-        <section class="surface" style="margin-bottom:1rem;">
-            <div class="section-head"><h2>Thêm bài vào lộ trình</h2></div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
-                <select id="templateSelect" class="input" aria-label="Chọn bài mẫu">${options || '<option>Chưa có bài mẫu</option>'}</select>
-                <button class="btn btn-primary btn-inline" data-action="assign-template" type="button">
-                    <i data-lucide="plus"></i><span>Gán bài mẫu</span>
-                </button>
+        <section class="surface lesson-builder" style="margin-bottom:1rem;">
+            <div class="section-head"><h2>Tạo / thêm chủ đề vào lộ trình</h2></div>
+            <label class="lesson-field">
+                <span>Tên chủ đề</span>
+                <input id="builderTitle" class="lesson-input" value="${escapeHtml(builderTitle)}"
+                       placeholder="vd: Động vật của con (để trống sẽ lấy tên bài mẫu)" />
+            </label>
+            <label class="lesson-field">
+                <span>Nạp từ bài mẫu (tùy chọn)</span>
+                <select id="templateSelect" class="lesson-input" aria-label="Chọn bài mẫu">${options}</select>
+            </label>
+            <p class="eyebrow">Tập từ của chủ đề (${builderWords.length})</p>
+            <div class="word-chips">${chips || '<span class="muted">Chưa có từ. Chọn bài mẫu hoặc tìm thêm từ bên dưới.</span>'}</div>
+            <div class="lesson-search">
+                <input id="builderSearch" class="lesson-input" value="${escapeHtml(builderQuery)}"
+                       placeholder="Tìm từ để thêm (vd: cat, màu, con chó)" />
+                <button class="btn btn-outline btn-inline" data-action="builder-search" type="button"><i data-lucide="search"></i><span>Tìm</span></button>
             </div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem;">
-                <input id="newLessonTitle" placeholder="Tên chủ đề tùy chỉnh (vd: Đồ ăn yêu thích)" style="flex:1;min-width:220px;" />
-                <button class="btn btn-outline btn-inline" data-action="create-lesson" type="button">
-                    <i data-lucide="folder-plus"></i><span>Tạo bài mới</span>
-                </button>
+            ${results ? `<div class="word-chips">${results}</div>` : ''}
+            <div style="margin-top:.85rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-inline" data-action="create-lesson" type="button"><i data-lucide="plus"></i><span>Thêm vào lộ trình</span></button>
+                <button class="btn btn-outline btn-inline" data-action="builder-reset" type="button"><span>Xóa hết</span></button>
             </div>
-            <p class="muted" style="margin-top:.35rem;font-size:.82rem;">Tạo bài rỗng rồi bấm "Sửa từ" để thêm từ tùy chỉnh.</p>
         </section>`;
 }
 
 function renderLessonsPanel() {
     if (!_data.lessons.length) {
-        return `<section class="surface"><p class="muted">Bé chưa có bài học nào trong lộ trình. Hãy gán một bài mẫu ở trên.</p></section>`;
+        return `<section class="surface"><p class="muted">Bé chưa có bài học nào. Hãy tạo/thêm chủ đề ở khung trên (chọn bài mẫu hoặc tự thêm từ).</p></section>`;
     }
     return `
         <section class="surface" style="margin-bottom:1rem;">
@@ -159,12 +192,12 @@ function renderEditor(lesson) {
     return `
         <div class="lesson-editor" style="margin-top:.75rem;border-top:1px solid var(--border,#eee);padding-top:.75rem;">
             <p class="eyebrow">Tên bài</p>
-            <input id="editLessonTitle" value="${escapeHtml(editTitle)}" placeholder="Tên chủ đề"
+            <input id="editLessonTitle" class="lesson-input" value="${escapeHtml(editTitle)}" placeholder="Tên chủ đề"
                    style="margin-bottom:.7rem;max-width:360px;" />
             <p class="eyebrow">Tập từ của bài (theo thứ tự)</p>
-            <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.5rem;">${working || '<span class="muted">Chưa chọn từ nào.</span>'}</div>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.5rem;">
-                <input id="vocabSearch" class="input" placeholder="Tìm từ (vd: cat, màu)" value="${escapeHtml(searchQuery)}" />
+            <div class="word-chips" style="margin-bottom:.5rem;">${working || '<span class="muted">Chưa chọn từ nào.</span>'}</div>
+            <div class="lesson-search" style="margin-bottom:.5rem;">
+                <input id="vocabSearch" class="lesson-input" placeholder="Tìm từ (vd: cat, màu)" value="${escapeHtml(searchQuery)}" />
                 <button class="btn btn-outline btn-inline" data-action="search" type="button"><i data-lucide="search"></i><span>Tìm</span></button>
             </div>
             <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.5rem;">${results}</div>
@@ -217,14 +250,24 @@ function accuracyClass(accuracy) {
 function bindRoot() {
     const root = document.getElementById('curriculumRoot') || appElement;
     root.addEventListener('click', onClick);
-    const searchInput = document.getElementById('vocabSearch');
-    if (searchInput) {
-        searchInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                searchQuery = searchInput.value;
-                runSearch();
-            }
+
+    const editorSearch = document.getElementById('vocabSearch');
+    if (editorSearch) {
+        editorSearch.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') { event.preventDefault(); captureEditorInputs(); runSearch(); }
+        });
+    }
+    const builderSearch = document.getElementById('builderSearch');
+    if (builderSearch) {
+        builderSearch.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') { event.preventDefault(); captureEditorInputs(); runBuilderSearch(); }
+        });
+    }
+    const templateSelect = document.getElementById('templateSelect');
+    if (templateSelect) {
+        templateSelect.addEventListener('change', (event) => {
+            captureEditorInputs();
+            loadTemplateIntoBuilder(event.target.value);
         });
     }
 }
@@ -239,22 +282,44 @@ async function onClick(event) {
         navigateTo(paths.child(childId));
         return;
     }
-    if (action === 'assign-template') {
-        const select = document.getElementById('templateSelect');
-        const templateId = select && select.value;
-        if (!templateId) return;
-        await guard(() => api.assignLessonTemplate(childId, templateId));
-        await renderCurriculum();
+    if (action === 'builder-search') {
+        captureEditorInputs();
+        await runBuilderSearch();
+        return;
+    }
+    if (action === 'builder-add-word') {
+        captureEditorInputs();
+        const wordId = target.getAttribute('data-word');
+        const word = builderResults.find(w => w.word_id === wordId);
+        if (word && !builderWords.some(w => w.word_id === wordId)) {
+            builderWords = [...builderWords, { word_id: word.word_id, word: word.word, meaning_vi: word.meaning_vi }];
+        }
+        paint();
+        return;
+    }
+    if (action === 'builder-remove-word') {
+        captureEditorInputs();
+        const wordId = target.getAttribute('data-word');
+        builderWords = builderWords.filter(w => w.word_id !== wordId);
+        paint();
+        return;
+    }
+    if (action === 'builder-reset') {
+        resetBuilder();
+        paint();
         return;
     }
     if (action === 'create-lesson') {
-        const input = document.getElementById('newLessonTitle');
-        const title = input ? input.value.trim() : '';
+        captureEditorInputs();
+        const title = (builderTitle || '').trim();
         if (!title) {
-            window.alert('Nhập tên chủ đề trước khi tạo.');
+            window.alert('Nhập tên chủ đề (hoặc chọn bài mẫu để lấy tên).');
             return;
         }
-        await guard(() => api.createChildLesson(childId, { title, level: 'pre_a1', word_ids: [] }));
+        if (!builderWords.length && !window.confirm('Chủ đề chưa có từ nào. Vẫn tạo bài rỗng?')) return;
+        await guard(() => api.createChildLesson(childId, {
+            title, level: 'pre_a1', word_ids: builderWords.map(w => w.word_id),
+        }));
         await renderCurriculum();
         return;
     }
@@ -323,6 +388,36 @@ async function runSearch() {
     } catch {
         searchResults = [];
     }
+    paint();
+}
+
+async function runBuilderSearch() {
+    try {
+        builderResults = await api.searchVocabulary(builderQuery);
+    } catch {
+        builderResults = [];
+    }
+    paint();
+}
+
+async function loadTemplateIntoBuilder(lessonId) {
+    // Chọn bài mẫu -> NẠP tập từ của mẫu vào builder (gộp, không trùng) + lấy tên nếu đang để trống.
+    if (!lessonId) return;
+    const tpl = _data.templates.find(t => t.lesson_id === lessonId);
+    let words = [];
+    try {
+        words = await api.getTemplateWords(lessonId);
+    } catch {
+        words = [];
+    }
+    const existing = new Set(builderWords.map(w => w.word_id));
+    for (const w of words) {
+        if (!existing.has(w.word_id)) {
+            builderWords.push({ word_id: w.word_id, word: w.word, meaning_vi: w.meaning_vi });
+            existing.add(w.word_id);
+        }
+    }
+    if (!builderTitle.trim() && tpl) builderTitle = tpl.title;
     paint();
 }
 
