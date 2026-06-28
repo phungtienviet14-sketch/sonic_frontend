@@ -12,8 +12,17 @@ const STATUS_LABELS = { locked: 'Chưa mở', active: 'Đang học', done: 'Đã
 let _data = { lessons: [], templates: [], pron: { words: [] }, vocab: { words: [] } };
 let editorLessonId = null;   // bài đang mở trình sửa từ
 let editWords = [];          // [{word_id, word, meaning_vi}] — tập từ đang sửa
+let editTitle = '';          // tên bài đang sửa
 let searchResults = [];
 let searchQuery = '';
+
+function captureEditorInputs() {
+    // Giữ giá trị đang gõ qua các lần re-render (tìm từ / thêm / bớt).
+    const titleInput = document.getElementById('editLessonTitle');
+    if (titleInput) editTitle = titleInput.value;
+    const searchInput = document.getElementById('vocabSearch');
+    if (searchInput) searchQuery = searchInput.value;
+}
 
 export async function renderCurriculum() {
     if (!state.currentChild) {
@@ -93,6 +102,13 @@ function renderAddLessonPanel() {
                     <i data-lucide="plus"></i><span>Gán bài mẫu</span>
                 </button>
             </div>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.75rem;border-top:1px solid var(--border);padding-top:.75rem;">
+                <input id="newLessonTitle" placeholder="Tên chủ đề tùy chỉnh (vd: Đồ ăn yêu thích)" style="flex:1;min-width:220px;" />
+                <button class="btn btn-outline btn-inline" data-action="create-lesson" type="button">
+                    <i data-lucide="folder-plus"></i><span>Tạo bài mới</span>
+                </button>
+            </div>
+            <p class="muted" style="margin-top:.35rem;font-size:.82rem;">Tạo bài rỗng rồi bấm "Sửa từ" để thêm từ tùy chỉnh.</p>
         </section>`;
 }
 
@@ -142,6 +158,9 @@ function renderEditor(lesson) {
         .join('');
     return `
         <div class="lesson-editor" style="margin-top:.75rem;border-top:1px solid var(--border,#eee);padding-top:.75rem;">
+            <p class="eyebrow">Tên bài</p>
+            <input id="editLessonTitle" value="${escapeHtml(editTitle)}" placeholder="Tên chủ đề"
+                   style="margin-bottom:.7rem;max-width:360px;" />
             <p class="eyebrow">Tập từ của bài (theo thứ tự)</p>
             <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.5rem;">${working || '<span class="muted">Chưa chọn từ nào.</span>'}</div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.5rem;">
@@ -228,6 +247,17 @@ async function onClick(event) {
         await renderCurriculum();
         return;
     }
+    if (action === 'create-lesson') {
+        const input = document.getElementById('newLessonTitle');
+        const title = input ? input.value.trim() : '';
+        if (!title) {
+            window.alert('Nhập tên chủ đề trước khi tạo.');
+            return;
+        }
+        await guard(() => api.createChildLesson(childId, { title, level: 'pre_a1', word_ids: [] }));
+        await renderCurriculum();
+        return;
+    }
     if (action === 'remove-lesson') {
         const lessonId = target.getAttribute('data-lesson');
         if (!window.confirm('Xóa bài này khỏi lộ trình của bé?')) return;
@@ -240,6 +270,7 @@ async function onClick(event) {
         const lesson = _data.lessons.find(l => l.lesson_id === lessonId);
         editorLessonId = lessonId;
         editWords = (lesson?.words || []).map(w => ({ ...w }));
+        editTitle = lesson?.title || '';
         searchResults = [];
         searchQuery = '';
         paint();
@@ -252,29 +283,35 @@ async function onClick(event) {
         return;
     }
     if (action === 'search') {
-        const input = document.getElementById('vocabSearch');
-        searchQuery = input ? input.value : '';
+        captureEditorInputs();
         await runSearch();
         return;
     }
     if (action === 'add-word') {
+        captureEditorInputs();
         const wordId = target.getAttribute('data-word');
         const word = searchResults.find(w => w.word_id === wordId);
         if (word && !editWords.some(w => w.word_id === wordId)) {
             editWords = [...editWords, { word_id: word.word_id, word: word.word, meaning_vi: word.meaning_vi }];
-            paint();
         }
+        paint();
         return;
     }
     if (action === 'remove-word') {
+        captureEditorInputs();
         const wordId = target.getAttribute('data-word');
         editWords = editWords.filter(w => w.word_id !== wordId);
         paint();
         return;
     }
     if (action === 'save-edit') {
+        captureEditorInputs();
         const lessonId = target.getAttribute('data-lesson');
-        await guard(() => api.updateChildLesson(childId, lessonId, { word_ids: editWords.map(w => w.word_id) }));
+        const title = (editTitle || '').trim();
+        await guard(() => api.updateChildLesson(childId, lessonId, {
+            title: title || undefined,
+            word_ids: editWords.map(w => w.word_id),
+        }));
         await renderCurriculum();
         return;
     }
