@@ -212,4 +212,59 @@ export const api = {
     deleteVoiceprint(userId) {
         return this.request(`/children/${userId}/voiceprint`, { method: 'DELETE' });
     },
+
+    // GĐ-Lesson — lộ trình bài học English có kiểm soát + báo cáo phát âm / nhớ nghĩa
+    async getChildLessons(userId) {
+        const data = await this.request(`/children/${userId}/lessons`);
+        return data.lessons || [];
+    },
+
+    async getLessonTemplates(level) {
+        const qs = level ? `?subject=english&level=${encodeURIComponent(level)}` : '?subject=english';
+        const data = await this.request(`/lessons/templates${qs}`);
+        return data.templates || [];
+    },
+
+    async searchVocabulary(q = '', topic = '', level = '') {
+        const params = new URLSearchParams();
+        if (q) params.set('q', q);
+        if (topic) params.set('topic', topic);
+        if (level) params.set('level', level);
+        const qs = params.toString();
+        const data = await this.request(`/vocabulary${qs ? `?${qs}` : ''}`);
+        return data.words || [];
+    },
+
+    assignLessonTemplate(userId, templateId) {
+        return this.request(`/children/${userId}/lessons`, {
+            method: 'POST',
+            body: JSON.stringify({ template_id: templateId }),
+        });
+    },
+
+    createChildLesson(userId, { title, level, topic, word_ids }) {
+        return this.request(`/children/${userId}/lessons`, {
+            method: 'POST',
+            body: JSON.stringify({ title, level, topic, word_ids }),
+        });
+    },
+
+    updateChildLesson(userId, lessonId, payload) {
+        return this.request(`/children/${userId}/lessons/${lessonId}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+    },
+
+    deleteChildLesson(userId, lessonId) {
+        return this.request(`/children/${userId}/lessons/${lessonId}`, { method: 'DELETE' });
+    },
+
+    getPronunciationReport(userId) {
+        return this.request(`/children/${userId}/reports/pronunciation`);
+    },
+
+    getVocabularyReport(userId) {
+        return this.request(`/children/${userId}/reports/vocabulary`);
+    },
 };

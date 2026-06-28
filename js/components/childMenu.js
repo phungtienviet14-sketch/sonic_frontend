@@ -47,6 +47,7 @@ export async function renderChildMenu(activeTab = 'overview') {
                 <nav class="workspace-tabs" aria-label="Không gian học tập">
                     ${tabButton('overview', 'Tổng quan', activeTab, 'layout-dashboard')}
                     ${tabButton('next', 'Bài học tiếp theo', activeTab, 'circle-arrow-right')}
+                    <button class="tab-button" id="openLessonsBtn" data-path="${paths.lessons(state.currentChild.user_id)}" type="button"><i data-lucide="book-marked"></i><span>Lộ trình</span></button>
                     <button class="tab-button" id="openReportBtn" data-path="${paths.report(state.currentChild.user_id)}" type="button"><i data-lucide="chart-column"></i><span>Báo cáo</span></button>
                     <button class="tab-button" id="openConfigBtn" data-path="${paths.config(state.currentChild.user_id)}" type="button"><i data-lucide="sliders-horizontal"></i><span>Cấu hình</span></button>
                     <button class="tab-button" id="openConnectBtn" data-path="${paths.connect(state.currentChild.user_id)}" type="button"><i data-lucide="qr-code"></i><span>Kết nối robot</span></button>
@@ -62,6 +63,7 @@ export async function renderChildMenu(activeTab = 'overview') {
         document.querySelectorAll('[data-workspace-tab]').forEach(button => {
             button.addEventListener('click', () => navigateTo(button.getAttribute('data-path')));
         });
+        document.getElementById('openLessonsBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openReportBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openConfigBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
         document.getElementById('openConnectBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));

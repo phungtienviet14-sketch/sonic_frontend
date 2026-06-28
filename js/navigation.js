@@ -5,6 +5,7 @@ export const paths = {
     addChild: () => '/children/new',
     child: (childId, tab = 'overview') => `/children/${encodeURIComponent(childId)}/${tab}`,
     report: (childId, tab = 'overview') => `/children/${encodeURIComponent(childId)}/report/${tab}`,
+    lessons: (childId) => `/children/${encodeURIComponent(childId)}/lessons`,
     config: (childId, section = 'goals') => `/children/${encodeURIComponent(childId)}/config/${section}`,
     privacy: (childId) => `/children/${encodeURIComponent(childId)}/privacy`,
     editChild: (childId) => `/children/${encodeURIComponent(childId)}/edit`,

@@ -6,6 +6,7 @@ import { renderChildMenu } from './components/childMenu.js';
 import { renderConfig } from './components/config.js';
 import { renderDashboard, renderAddChildForm, renderEditChildForm } from './components/dashboard.js';
 import { renderReport } from './components/report.js';
+import { renderCurriculum } from './components/curriculum.js';
 import { renderPrivacy } from './components/privacy.js';
 import { renderConnect } from './components/connect.js';
 import { renderAccount } from './components/account.js';
@@ -69,6 +70,13 @@ export async function routeCurrentPath() {
         if (route.type === 'config') {
             if (await selectChild(route.childId)) {
                 await renderConfig(route.section);
+            }
+            return;
+        }
+
+        if (route.type === 'lessons') {
+            if (await selectChild(route.childId)) {
+                await renderCurriculum();
             }
             return;
         }
@@ -140,6 +148,9 @@ function parseRoute(pathname) {
                 childId,
                 section: CONFIG_SECTIONS.has(segments[3]) ? segments[3] : 'goals',
             };
+        }
+        if (segments[2] === 'lessons') {
+            return { type: 'lessons', childId };
         }
         if (segments[2] === 'privacy') {
             return { type: 'privacy', childId };
