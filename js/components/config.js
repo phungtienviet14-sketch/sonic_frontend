@@ -4,34 +4,21 @@ import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { buildCheckboxGroup, buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, refreshIcons, showToast } from '../utils.js';
 
+// Cấp độ Tiếng Anh: nhãn thân thiện ĐỒNG BỘ với Lộ trình/Báo cáo (Vỡ lòng/Cơ bản/Khá).
+// Value giữ beginner/elementary/intermediate vì backend map -> pre_a1/a1/a2 (normalize_learning_level).
 const englishLevelOptions = [
+    { value: 'auto', label: 'Tự động (theo tuổi)' },
+    { value: 'beginner', label: 'Vỡ lòng' },
+    { value: 'elementary', label: 'Cơ bản' },
+    { value: 'intermediate', label: 'Khá' },
+];
+
+// Cấp độ Toán giữ nhãn cũ.
+const mathLevelOptions = [
     { value: 'auto', label: 'Tự động' },
     { value: 'beginner', label: 'Mới bắt đầu' },
     { value: 'elementary', label: 'Sơ cấp' },
     { value: 'intermediate', label: 'Trung cấp' },
-];
-
-const levelOptions = englishLevelOptions;
-
-const englishTopicOptions = [
-    { value: 'animals', label: 'Động vật' },
-    { value: 'colors', label: 'Màu sắc' },
-    { value: 'fruits', label: 'Trái cây' },
-    { value: 'family', label: 'Gia đình' },
-    { value: 'body', label: 'Cơ thể' },
-    { value: 'school', label: 'Trường học' },
-    { value: 'weather', label: 'Thời tiết' },
-    { value: 'food', label: 'Thức ăn' },
-    { value: 'transport', label: 'Phương tiện' },
-    { value: 'clothing', label: 'Quần áo' },
-];
-
-const englishMethodOptions = [
-    { value: 'vocabulary', label: 'Từ vựng' },
-    { value: 'game', label: 'Trò chơi' },
-    { value: 'story', label: 'Câu chuyện' },
-    { value: 'song', label: 'Bài hát' },
-    { value: 'conversation', label: 'Hội thoại' },
 ];
 
 const difficultyOptions = [
@@ -119,7 +106,7 @@ export async function renderConfig(activeSection = 'goals') {
                                 </div>
                                 <div class="form-group">
                                     <label for="daily_limit">Số phút mỗi ngày</label>
-                                    <input type="number" id="daily_limit" value="${config.daily_limit_minutes || 30}" min="5" max="1440">
+                                    <input type="number" id="daily_limit" value="${config.daily_limit_minutes || 30}" min="5" max="1000">
                                 </div>
                             </div>
                         </div>
@@ -134,23 +121,10 @@ export async function renderConfig(activeSection = 'goals') {
                                     <label for="en_level">Cấp độ</label>
                                     ${buildSelect('en_level', englishLevelOptions, config.english_level || 'auto')}
                                 </div>
-                                <div class="form-group">
-                                    <label for="en_difficulty">Độ khó</label>
-                                    ${buildSelect('en_difficulty', difficultyOptions, config.english_difficulty || 'medium')}
-                                </div>
-                                <div class="form-group">
-                                    <label for="en_words_per_session">Số từ mỗi buổi</label>
-                                    <input type="number" id="en_words_per_session" value="${config.english_words_per_session ?? 5}" min="1" max="20">
-                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>Chủ đề</label>
-                                ${buildCheckboxGroup('en_topics', englishTopicOptions, config.english_topics || [])}
-                            </div>
-                            <div class="form-group">
-                                <label>Phương pháp</label>
-                                ${buildCheckboxGroup('en_methods', englishMethodOptions, config.english_methods || [])}
-                            </div>
+                            <p class="muted" style="margin:.25rem 0 .6rem;font-size:.85rem;">
+                                📚 Bài học &amp; từ vựng Tiếng Anh được chọn ở tab <strong>Lộ trình</strong>.
+                            </p>
                             <div class="form-group">
                                 <label for="en_instruction">Hướng dẫn riêng</label>
                                 <textarea id="en_instruction" rows="3">${escapeHtml(config.english_custom_instructions || '')}</textarea>
@@ -165,7 +139,7 @@ export async function renderConfig(activeSection = 'goals') {
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label for="math_level">Cấp độ</label>
-                                    ${buildSelect('math_level', levelOptions, config.math_level || 'auto')}
+                                    ${buildSelect('math_level', mathLevelOptions, config.math_level || 'auto')}
                                 </div>
                                 <div class="form-group">
                                     <label for="math_difficulty">Độ khó</label>
@@ -314,15 +288,11 @@ function applyPreset(preset) {
         set('personality', 'patient');
         set('encouragement_level', 'high');
         set('daily_limit', 20);
-        set('en_difficulty', 'easy');
         set('math_difficulty', 'easy');
         check('camera_learning_enabled', true);
     }
     if (preset === 'review_words') {
         check('en_enabled', true);
-        set('en_words_per_session', 8);
-        set('en_difficulty', 'medium');
-        setCheckedGroup('en_methods', ['vocabulary', 'conversation', 'game']);
         set('encouragement_level', 'high');
     }
     if (preset === 'math_focus') {
@@ -336,7 +306,6 @@ function applyPreset(preset) {
         set('language_ratio', 'balanced');
         check('en_enabled', true);
         check('math_enabled', true);
-        setCheckedGroup('en_methods', ['story', 'conversation', 'vocabulary']);
         set('personality', 'playful');
     }
 }
@@ -357,10 +326,6 @@ async function saveConfig(event) {
         },
         english_enabled: document.getElementById('en_enabled').checked,
         english_level: document.getElementById('en_level').value,
-        english_topics: getCheckedValues('en_topics'),
-        english_methods: getCheckedValues('en_methods'),
-        english_words_per_session: parseInt(document.getElementById('en_words_per_session').value, 10) || 5,
-        english_difficulty: document.getElementById('en_difficulty').value,
         english_custom_instructions: document.getElementById('en_instruction').value,
         math_enabled: document.getElementById('math_enabled').checked,
         math_level: document.getElementById('math_level').value,
