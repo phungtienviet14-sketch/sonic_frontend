@@ -291,7 +291,6 @@ function applyPreset(preset) {
         set('personality', 'playful');
         set('encouragement_level', 'high');
         set('language_ratio', 'vi_primary');
-        set('daily_limit', 20);
     }
     if (preset === 'english_focus') {
         check('en_enabled', true);
@@ -302,7 +301,6 @@ function applyPreset(preset) {
         check('math_enabled', true);
         setCheckedGroup('math_ops', ['add', 'subtract']);
         check('math_word_problems', true);
-        set('daily_limit', 35);
     }
     if (preset === 'bilingual') {
         set('language_ratio', 'balanced');
