@@ -2052,3 +2052,37 @@ select.lesson-input {
 .danger-zone strong {
     color: var(--danger);
 }
+
+/* GĐ-Lesson Toán — màn Lộ trình Toán (read-only) */
+.math-roadmap-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.math-level {
+    display: grid;
+    gap: 10px;
+    border-left: 4px solid var(--border);
+}
+
+.math-level.is-current {
+    border-left-color: var(--amber);
+    background: var(--surface-soft);
+}
+
+.math-level.is-locked {
+    opacity: 0.6;
+}
+
+.math-level .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--amber);
+}
+
+.math-level .eyebrow i {
+    width: 15px;
+    height: 15px;
+}

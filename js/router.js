@@ -7,6 +7,7 @@ import { renderConfig } from './components/config.js';
 import { renderDashboard, renderAddChildForm, renderEditChildForm } from './components/dashboard.js';
 import { renderReport } from './components/report.js';
 import { renderCurriculum } from './components/curriculum.js';
+import { renderMathRoadmap } from './components/mathRoadmap.js';
 import { renderPrivacy } from './components/privacy.js';
 import { renderConnect } from './components/connect.js';
 import { renderAccount } from './components/account.js';
@@ -81,6 +82,13 @@ export async function routeCurrentPath() {
             return;
         }
 
+        if (route.type === 'math-roadmap') {
+            if (await selectChild(route.childId)) {
+                await renderMathRoadmap();
+            }
+            return;
+        }
+
         if (route.type === 'privacy') {
             if (await selectChild(route.childId)) {
                 await renderPrivacy();
@@ -151,6 +159,9 @@ function parseRoute(pathname) {
         }
         if (segments[2] === 'lessons') {
             return { type: 'lessons', childId };
+        }
+        if (segments[2] === 'math-roadmap') {
+            return { type: 'math-roadmap', childId };
         }
         if (segments[2] === 'privacy') {
             return { type: 'privacy', childId };

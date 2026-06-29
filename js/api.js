@@ -219,6 +219,12 @@ export const api = {
         return data.lessons || [];
     },
 
+    // GĐ-Lesson Toán — lộ trình Toán theo level (CHỈ XEM; hệ thống kiểm soát, ba mẹ không sửa).
+    async getMathRoadmap(userId) {
+        const data = await this.request(`/children/${userId}/math-roadmap`);
+        return data.levels || [];
+    },
+
     async getLessonTemplates(level) {
         const qs = level ? `?subject=english&level=${encodeURIComponent(level)}` : '?subject=english';
         const data = await this.request(`/lessons/templates${qs}`);
