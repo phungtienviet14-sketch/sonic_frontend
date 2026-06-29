@@ -126,18 +126,17 @@ function renderSubjectTab(subject, data) {
                         <p class="eyebrow">${meta.label}</p>
                         <h2>Cấp độ ${formatLevel(data?.level_info?.current_level)}</h2>
                     </div>
-                    <span class="status-chip ok"><i data-lucide="sparkles"></i><span>${data?.level_info?.total_xp || 0} điểm XP</span></span>
                 </div>
                 <div class="metric-strip">
-                    <div><strong>${data?.level_info?.streak_days || 0}</strong><span>chuỗi ngày</span></div>
+                    <div><strong>${data?.level_info?.streak_days || 0}</strong><span>ngày liên tiếp</span></div>
                     <div><strong>${data?.daily_summary?.attempts?.answered_attempts || 0}</strong><span>lượt làm hôm nay</span></div>
-                    <div><strong>${scoreLabel(data?.daily_summary?.average_score)}</strong><span>điểm hôm nay</span></div>
+                    <div><strong>${data?.daily_summary?.attempts?.correct_attempts || 0}</strong><span>câu đúng hôm nay</span></div>
                 </div>
                 ${renderPlacementBox(data?.placement)}
             </article>
 
             <article class="surface">
-                <h2>Mức thành thạo kỹ năng</h2>
+                <h2>Bé làm tốt phần nào</h2>
                 ${renderSkillMastery(data?.skill_mastery || [])}
             </article>
 
@@ -178,7 +177,6 @@ function renderHistoryTab(english, math) {
                             <p>${escapeHtml(SUBJECTS[row.subject]?.label || row.subject)} · ${escapeHtml(row.detail || 'Hoạt động học')}</p>
                         </div>
                         <div class="history-score">
-                            <span>${row.score !== null && row.score !== undefined ? `${escapeHtml(row.score)}` : '-'}</span>
                             <small>${formatDate(row.date)}</small>
                         </div>
                     </div>
@@ -215,7 +213,7 @@ function renderPlacementRow(label, placement = {}) {
             </div>
             <span class="status-chip ${completed ? 'ok' : 'warning'}">
                 <i data-lucide="${completed ? 'circle-check' : 'hourglass'}"></i>
-                <span>${completed ? `${placement.placement_score ?? 0}/100` : 'Đang chờ'}</span>
+                <span>${completed ? 'Đã đánh giá' : 'Đang chờ'}</span>
             </span>
         </div>
     `;
@@ -227,7 +225,7 @@ function renderPlacementBox(placement = {}) {
     }
     return `
         <div class="subject-note">
-            <p>Đánh giá đầu vào ${placement.placement_score ?? 0}/100, đề xuất cấp độ ${formatLevel(placement.recommended_level)}.</p>
+            <p>Đã đánh giá đầu vào, đề xuất cấp độ ${formatLevel(placement.recommended_level)}.</p>
         </div>
     `;
 }
@@ -250,7 +248,7 @@ function renderSkillMastery(items) {
             ${items.slice(0, 12).map(item => `
                 <div class="data-row">
                     <span>${escapeHtml(labelCode(item.skill_id || 'skill'))}</span>
-                    <strong>${Math.round(Number(item.mastery_score || 0))}%</strong>
+                    <span class="band ${masteryBand(item.mastery_score).cls}">${masteryBand(item.mastery_score).label}</span>
                 </div>
             `).join('')}
         </div>
@@ -270,7 +268,7 @@ function renderWordBank(wordBank = {}) {
             ${dueWords.length ? dueWords.slice(0, 10).map(word => `
                 <div class="data-row">
                     <span>${escapeHtml(word.word || '')}<small>${escapeHtml(word.meaning_vi || '')}</small></span>
-                    <strong>${word.strength_score ?? 0}</strong>
+                    <span class="band ${masteryBand(word.strength_score).cls}">${masteryBand(word.strength_score).label}</span>
                 </div>
             `).join('') : '<p class="muted compact">Chưa có từ cần ôn.</p>'}
         </div>
@@ -401,6 +399,13 @@ function reasonLabel(reason = '') {
         continue_current_level: 'Tiếp tục level hiện tại',
         repair_repeated_misconception: 'Sửa lỗi hiểu nhầm lặp lại',
     }[reason] || escapeHtml(reason || 'Theo tiến độ hiện tại');
+}
+
+function masteryBand(score) {
+    const s = Number(score || 0);
+    if (s >= 70) return { label: 'Tốt', cls: 'is-done' };
+    if (s >= 40) return { label: 'Khá', cls: 'is-learning' };
+    return { label: 'Cần luyện', cls: 'is-poor' };
 }
 
 function scoreLabel(score) {
