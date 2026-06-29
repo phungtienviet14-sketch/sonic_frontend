@@ -46,7 +46,6 @@ export async function renderChildMenu(activeTab = 'overview') {
 
                 <nav class="workspace-tabs" aria-label="Không gian học tập">
                     ${tabButton('overview', 'Tổng quan', activeTab, 'layout-dashboard')}
-                    ${tabButton('next', 'Bài học tiếp theo', activeTab, 'circle-arrow-right')}
                     <button class="tab-button" id="openLessonsBtn" data-path="${paths.lessons(state.currentChild.user_id)}" type="button"><i data-lucide="book-marked"></i><span>Lộ trình</span></button>
                     <button class="tab-button" id="openReportBtn" data-path="${paths.report(state.currentChild.user_id)}" type="button"><i data-lucide="chart-column"></i><span>Báo cáo</span></button>
                     <button class="tab-button" id="openConfigBtn" data-path="${paths.config(state.currentChild.user_id)}" type="button"><i data-lucide="sliders-horizontal"></i><span>Cấu hình</span></button>
@@ -55,7 +54,7 @@ export async function renderChildMenu(activeTab = 'overview') {
                 </nav>
                 ${overview.source === 'fallback_progress_report' ? renderFallbackNotice() : ''}
 
-                ${activeTab === 'next' ? renderNextLessonPanel(overview) : renderOverviewPanel(overview)}
+                ${renderOverviewPanel(overview)}
             </main>
         `;
 
@@ -344,9 +343,9 @@ function formatLevel(level) {
         beginner: 'Mới bắt đầu',
         elementary: 'Sơ cấp',
         intermediate: 'Trung cấp',
-        pre_a1: 'Tiền A1',
-        a1: 'A1',
-        a2: 'A2',
+        pre_a1: 'Vỡ lòng',
+        a1: 'Cơ bản',
+        a2: 'Khá',
     };
     return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
 }

@@ -7,7 +7,29 @@ import { escapeHtml, refreshIcons } from '../utils.js';
 // GĐ-Lesson — màn "Lộ trình bài học" cho phụ huynh: xem/sửa tập từ mỗi bài + 2 báo cáo.
 // docs/bai_hoc_tieng_anh_co_kiem_soat.md. Theo pattern full re-render của app.
 
-const STATUS_LABELS = { locked: 'Chưa mở', active: 'Đang học', done: 'Đã xong' };
+// Nhãn thân thiện cho phụ huynh (giấu số kỹ thuật).
+const LESSON_PROGRESS = {
+    new: { label: 'Chưa học', cls: 'is-new' },
+    learning: { label: 'Đang học', cls: 'is-learning' },
+    done: { label: 'Hoàn thành', cls: 'is-done' },
+    empty: { label: 'Chưa có từ', cls: 'is-empty' },
+};
+const WORD_STATE = {
+    new: 'st-new',
+    learning: 'st-learning',
+    mastered: 'st-mastered',
+};
+
+function levelLabel(level) {
+    return { pre_a1: 'Vỡ lòng', a1: 'Cơ bản', a2: 'Khá' }[level] || (level || '');
+}
+
+function pronBand(accuracy) {
+    if (accuracy == null) return { label: 'Chưa rõ', cls: 'is-new' };
+    if (accuracy >= 70) return { label: 'Rõ', cls: 'is-done' };
+    if (accuracy >= 50) return { label: 'Tạm', cls: 'is-learning' };
+    return { label: 'Cần luyện', cls: 'is-poor' };
+}
 
 let _data = { lessons: [], templates: [], pron: { words: [] }, vocab: { words: [] } };
 let editorLessonId = null;   // bài đang mở trình sửa từ
@@ -160,24 +182,31 @@ function renderLessonsPanel() {
 
 function renderLessonCard(lesson) {
     const isEditing = editorLessonId === lesson.lesson_id;
+    const prog = LESSON_PROGRESS[lesson.progress] || LESSON_PROGRESS.new;
     const chips = (lesson.words || [])
-        .map(w => `<span class="word-chip">${escapeHtml(w.word)} <small>(${escapeHtml(w.meaning_vi || '')})</small></span>`)
+        .map(w => {
+            const cls = WORD_STATE[w.state] || WORD_STATE.new;
+            const flag = w.forgets_meaning ? ' <span class="chip-flag" title="Bé hay quên nghĩa từ này">hay quên</span>' : '';
+            return `<span class="word-chip ${cls}">${escapeHtml(w.word)} <small>(${escapeHtml(w.meaning_vi || '')})</small>${flag}</span>`;
+        })
         .join('');
+    const total = lesson.total || 0;
+    const learned = lesson.learned || 0;
+    const pct = total ? Math.round((learned * 100) / total) : 0;
     return `
-        <article class="lesson-card surface" data-lesson="${escapeHtml(lesson.lesson_id)}" style="padding:.75rem;margin-bottom:.5rem;">
+        <article class="lesson-card surface" data-lesson="${escapeHtml(lesson.lesson_id)}">
             <div class="section-head compact-head">
                 <div>
                     <strong>${escapeHtml(lesson.title || 'Bài học')}</strong>
-                    <p class="muted">${escapeHtml(lesson.level || '')} · ${STATUS_LABELS[lesson.status] || escapeHtml(lesson.status || '')}</p>
+                    <p class="muted">${escapeHtml(levelLabel(lesson.level))} · <span class="lesson-badge ${prog.cls}">${prog.label}</span></p>
                 </div>
                 <div style="display:flex;gap:.4rem;">
                     <button class="btn btn-outline btn-inline" data-action="edit-lesson" data-lesson="${escapeHtml(lesson.lesson_id)}" type="button"><i data-lucide="pencil"></i><span>Sửa từ</span></button>
                     <button class="btn btn-outline btn-inline" data-action="remove-lesson" data-lesson="${escapeHtml(lesson.lesson_id)}" type="button"><i data-lucide="trash-2"></i><span>Xóa</span></button>
                 </div>
             </div>
-            <div class="word-chips" style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.5rem;">
-                ${chips || '<span class="muted">Bài chưa có từ nào.</span>'}
-            </div>
+            ${total ? `<div class="lesson-progress"><div class="lesson-progress-bar"><span style="width:${pct}%"></span></div><small>Đã thuộc ${learned}/${total} từ</small></div>` : ''}
+            <div class="word-chips">${chips || '<span class="muted">Bài chưa có từ nào.</span>'}</div>
             ${isEditing ? renderEditor(lesson) : ''}
         </article>`;
 }
@@ -212,15 +241,18 @@ function renderPronunciationReport() {
     const words = _data.pron.words || [];
     return `
         <section class="surface" style="margin-bottom:1rem;">
-            <div class="section-head"><h2>Điểm yếu phát âm</h2></div>
+            <div class="section-head"><h2>Phát âm cần luyện</h2></div>
             ${words.length ? `
                 <div class="report-rows">
-                    ${words.map(w => `
-                        <div class="alert-row ${accuracyClass(w.avg_accuracy)}">
+                    ${words.map(w => {
+                        const band = pronBand(w.avg_accuracy);
+                        return `<div class="report-row">
+                            <span class="band ${band.cls}">${band.label}</span>
                             <strong>${escapeHtml(w.reference_word || '')}</strong>
-                            <p>Điểm phát âm trung bình: ${w.avg_accuracy ?? '—'}/100 · đọc ${w.attempts || 0} lần</p>
-                        </div>`).join('')}
-                </div>` : '<p class="muted">Chưa có dữ liệu phát âm. Khi bé đọc theo trong bài học, điểm sẽ hiện ở đây.</p>'}
+                            <small class="muted">đọc ${w.attempts || 0} lần</small>
+                        </div>`;
+                    }).join('')}
+                </div>` : '<p class="muted">Chưa có dữ liệu phát âm. Khi bé đọc theo trong bài, kết quả sẽ hiện ở đây.</p>'}
         </section>`;
 }
 
@@ -232,19 +264,13 @@ function renderVocabularyReport() {
             ${words.length ? `
                 <div class="report-rows">
                     ${words.map(w => `
-                        <div class="alert-row ${(w.meaning_wrong_count || 0) >= 2 ? 'high' : 'medium'}">
+                        <div class="report-row">
+                            <span class="band is-poor">Hay quên</span>
                             <strong>${escapeHtml(w.word)} <small>(${escapeHtml(w.meaning_vi || '')})</small></strong>
-                            <p>Sai nghĩa ${w.meaning_wrong_count || 0} lần · độ nhớ ${w.strength_score ?? 0}/100</p>
+                            <small class="muted">${(w.meaning_wrong_count || 0) > 0 ? `sai nghĩa ${w.meaning_wrong_count} lần` : 'cần ôn lại'}</small>
                         </div>`).join('')}
                 </div>` : '<p class="muted">Chưa ghi nhận từ nào bé hay quên nghĩa.</p>'}
         </section>`;
-}
-
-function accuracyClass(accuracy) {
-    if (accuracy == null) return 'medium';
-    if (accuracy < 50) return 'high';
-    if (accuracy < 70) return 'medium';
-    return 'low';
 }
 
 function bindRoot() {

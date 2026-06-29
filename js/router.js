@@ -12,7 +12,7 @@ import { renderConnect } from './components/connect.js';
 import { renderAccount } from './components/account.js';
 import { escapeHtml, refreshIcons } from './utils.js';
 
-const CHILD_TABS = new Set(['overview', 'next']);
+const CHILD_TABS = new Set(['overview']);
 const REPORT_TABS = new Set(['overview', 'english', 'math', 'history']);
 const CONFIG_SECTIONS = new Set(['goals', 'english', 'math', 'safety']);
 

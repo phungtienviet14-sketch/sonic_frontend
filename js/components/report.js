@@ -413,9 +413,9 @@ function formatLevel(level) {
         beginner: 'Mới bắt đầu',
         elementary: 'Sơ cấp',
         intermediate: 'Trung cấp',
-        pre_a1: 'Tiền A1',
-        a1: 'A1',
-        a2: 'A2',
+        pre_a1: 'Vỡ lòng',
+        a1: 'Cơ bản',
+        a2: 'Khá',
     };
     return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
 }
