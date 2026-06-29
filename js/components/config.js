@@ -76,9 +76,9 @@ export async function renderConfig(activeSection = 'goals') {
                         </div>
                     </div>
                     <div class="preset-grid">
-                        ${presetButton('gentle', 'Nhẹ nhàng', 'Ít áp lực, khen nhiều', 'heart')}
-                        ${presetButton('review_words', 'Ôn từ yếu', 'Ưu tiên word bank', 'book-open')}
-                        ${presetButton('math_focus', 'Tập trung Toán', 'Luyện lỗi lặp lại', 'calculator')}
+                        ${presetButton('chat', 'Trò chuyện', 'Không học, robot trò chuyện cùng bé', 'message-circle')}
+                        ${presetButton('english_focus', 'Tập trung Tiếng Anh', 'Học Tiếng Anh là chính', 'book-open')}
+                        ${presetButton('math_focus', 'Tập trung Toán', 'Luyện Toán nhiều hơn', 'calculator')}
                         ${presetButton('bilingual', 'Song ngữ', 'Cân bằng Việt - Anh', 'languages')}
                     </div>
                 </section>
@@ -284,20 +284,22 @@ function applyPreset(preset) {
         if (el) el.checked = value;
     };
 
-    if (preset === 'gentle') {
-        set('personality', 'patient');
+    if (preset === 'chat') {
+        // Không học — robot làm bạn trò chuyện, chủ động hỏi bé (tắt cả 2 môn).
+        check('en_enabled', false);
+        check('math_enabled', false);
+        set('personality', 'playful');
         set('encouragement_level', 'high');
+        set('language_ratio', 'vi_primary');
         set('daily_limit', 20);
-        set('math_difficulty', 'easy');
-        check('camera_learning_enabled', true);
     }
-    if (preset === 'review_words') {
+    if (preset === 'english_focus') {
         check('en_enabled', true);
-        set('encouragement_level', 'high');
+        set('language_ratio', 'en_primary');
+        set('personality', 'playful');
     }
     if (preset === 'math_focus') {
         check('math_enabled', true);
-        set('math_difficulty', 'medium');
         setCheckedGroup('math_ops', ['add', 'subtract']);
         check('math_word_problems', true);
         set('daily_limit', 35);
