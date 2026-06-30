@@ -2086,3 +2086,102 @@ select.lesson-input {
     width: 15px;
     height: 15px;
 }
+
+/* ===== Hướng dẫn phụ huynh (trang Guide) ===== */
+.guide-intro {
+    margin-bottom: 16px;
+}
+
+.guide-steps {
+    margin: 10px 0 12px;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--text-light);
+}
+
+.guide-steps li {
+    line-height: 1.5;
+}
+
+.guide-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.guide-item {
+    padding: 0;
+    overflow: hidden;
+}
+
+.guide-item > summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.guide-item > summary::-webkit-details-marker {
+    display: none;
+}
+
+.guide-item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    color: var(--teal);
+    flex-shrink: 0;
+}
+
+.guide-item-icon i {
+    width: 18px;
+    height: 18px;
+}
+
+.guide-item-title {
+    flex: 1;
+}
+
+.guide-item-chevron {
+    color: var(--muted);
+    transition: transform 0.2s ease;
+}
+
+.guide-item[open] .guide-item-chevron {
+    transform: rotate(180deg);
+}
+
+.guide-item-body {
+    padding: 0 16px 16px 62px;
+    color: var(--text-light);
+    line-height: 1.55;
+}
+
+.guide-item-body ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.guide-item-body p + ul {
+    margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+    .guide-item-body {
+        padding-left: 16px;
+    }
+}

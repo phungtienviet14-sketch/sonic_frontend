@@ -3,7 +3,7 @@ import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { loadChildOverview } from '../overviewFallback.js';
-import { escapeHtml, refreshIcons, showToast } from '../utils.js';
+import { escapeHtml, refreshIcons, showToast, formatLevel } from '../utils.js';
 
 const SUBJECT_LABELS = {
     english: 'Tiếng Anh',
@@ -113,6 +113,10 @@ function renderDashboardShell(alerts) {
                             <span>Thông báo</span>
                             <span id="notiBadge" class="badge ${alerts.length ? '' : 'hidden'}">${alerts.length}</span>
                         </button>
+                        <button id="guideBtn" class="btn btn-ghost btn-inline" data-path="${paths.guide()}" type="button">
+                            <i data-lucide="circle-help"></i>
+                            <span>Hướng dẫn</span>
+                        </button>
                         <button id="accountBtn" class="btn btn-outline btn-inline" data-path="${paths.account()}" type="button">
                             <i data-lucide="user-cog"></i>
                             <span>Tài khoản</span>
@@ -155,6 +159,8 @@ function renderDashboardShell(alerts) {
     });
 
     document.getElementById('accountBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
+
+    document.getElementById('guideBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
     document.getElementById('addChildBtn').addEventListener('click', (event) => navigateTo(event.currentTarget.getAttribute('data-path')));
 
@@ -420,12 +426,12 @@ function renderChildCard(child) {
                     <small>phút hôm nay</small>
                 </div>
                 <div>
-                    <span>${english.xp ?? 0}</span>
-                    <small>XP tiếng Anh</small>
+                    <span>${english.today?.answered_attempts ?? 0}</span>
+                    <small>lượt Anh hôm nay</small>
                 </div>
                 <div>
-                    <span>${math.xp ?? 0}</span>
-                    <small>XP Toán</small>
+                    <span>${math.today?.answered_attempts ?? 0}</span>
+                    <small>lượt Toán hôm nay</small>
                 </div>
             </div>
 
@@ -469,8 +475,8 @@ function renderSubjectLine(subject, summary = {}) {
                 <span class="subject-level">${enabled ? formatLevel(summary.level) : 'Đang tắt'}</span>
             </div>
             <div class="subject-stats">
-                <span>${summary.xp ?? 0} điểm XP</span>
-                <span>${summary.streak_days ?? 0} ngày</span>
+                <span>${summary.today?.answered_attempts ?? 0} lượt hôm nay</span>
+                <span>${summary.streak_days ?? 0} ngày liên tiếp</span>
             </div>
         </div>
     `;
@@ -562,17 +568,4 @@ function usagePercent(usage = {}) {
     const limit = Number(usage.daily_limit_minutes || 30);
     const used = Number(usage.used_minutes || 0);
     return Math.max(0, Math.min(100, Math.round((used / Math.max(limit, 1)) * 100)));
-}
-
-function formatLevel(level) {
-    const labels = {
-        auto: 'Tự động',
-        beginner: 'Mới bắt đầu',
-        elementary: 'Sơ cấp',
-        intermediate: 'Trung cấp',
-        pre_a1: 'Tiền A1',
-        a1: 'A1',
-        a2: 'A2',
-    };
-    return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
 }

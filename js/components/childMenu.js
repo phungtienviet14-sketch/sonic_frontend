@@ -2,7 +2,7 @@ import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
 import { loadChildOverview } from '../overviewFallback.js';
-import { escapeHtml, refreshIcons } from '../utils.js';
+import { escapeHtml, refreshIcons, formatLevel, labelCode } from '../utils.js';
 
 const SUBJECT_LABELS = {
     english: 'Tiếng Anh',
@@ -218,12 +218,12 @@ function renderSubjectOverview(subject, summary = {}) {
                 </span>
             </div>
             <div class="metric-strip">
-                <div><strong>${summary.xp ?? 0}</strong><span>điểm XP</span></div>
                 <div><strong>${summary.streak_days ?? 0}</strong><span>chuỗi ngày</span></div>
-                <div><strong>${today.answered_attempts ?? 0}</strong><span>lượt làm</span></div>
+                <div><strong>${today.answered_attempts ?? 0}</strong><span>lượt làm hôm nay</span></div>
+                <div><strong>${today.correct_attempts ?? 0}</strong><span>câu đúng hôm nay</span></div>
             </div>
             <div class="subject-note">
-                <p>Đánh giá đầu vào: ${placement.status === 'completed' ? `${placement.placement_score ?? 0}/100, cấp độ ${formatLevel(placement.recommended_level)}` : 'đang chờ'}</p>
+                <p>Đánh giá đầu vào: ${placement.status === 'completed' ? `đã xong, cấp độ ${formatLevel(placement.recommended_level)}` : 'đang chờ'}</p>
                 ${renderNeedsReview(subject, summary)}
             </div>
         </article>
@@ -339,43 +339,3 @@ function alertTitle(type = '') {
     }[type] || 'Cần chú ý';
 }
 
-function formatLevel(level) {
-    const labels = {
-        auto: 'Tự động',
-        beginner: 'Mới bắt đầu',
-        elementary: 'Sơ cấp',
-        intermediate: 'Trung cấp',
-        pre_a1: 'Vỡ lòng',
-        a1: 'Cơ bản',
-        a2: 'Khá',
-    };
-    return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
-}
-
-function labelCode(value) {
-    const labels = {
-        counting: 'đếm số',
-        comparison: 'so sánh',
-        addition: 'phép cộng',
-        subtraction: 'phép trừ',
-        multiplication: 'phép nhân',
-        division: 'phép chia',
-        geometry: 'hình học',
-        geometry_shapes: 'nhận biết hình',
-        time: 'xem giờ',
-        money: 'tiền và mua bán',
-        logic: 'tư duy logic',
-        logic_patterns: 'quy luật',
-        vocabulary: 'từ vựng',
-        listening: 'nghe hiểu',
-        speaking: 'nói',
-        sentence_patterns: 'mẫu câu',
-        picture_talk: 'nói theo tranh',
-        operation_confusion: 'nhầm phép tính',
-        counting_error: 'đếm sai',
-        off_by_one: 'lệch một đơn vị',
-        carry_error: 'sai nhớ khi cộng',
-        borrow_error: 'sai mượn khi trừ',
-    };
-    return labels[String(value || '').toLowerCase()] || String(value || 'chưa rõ');
-}

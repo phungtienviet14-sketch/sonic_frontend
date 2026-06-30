@@ -12,6 +12,7 @@ export const paths = {
     editChild: (childId) => `/children/${encodeURIComponent(childId)}/edit`,
     connect: (childId) => `/children/${encodeURIComponent(childId)}/connect`,
     account: () => '/account',
+    guide: () => '/guide',
 };
 
 export function navigateTo(path, { replace = false } = {}) {

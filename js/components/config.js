@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
-import { buildCheckboxGroup, buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, refreshIcons, showToast } from '../utils.js';
+import { buildSelect, escapeHtml, getCheckedValues, refreshBlockedTags, refreshIcons, showToast } from '../utils.js';
 
 // Cấp độ Tiếng Anh: nhãn thân thiện ĐỒNG BỘ với Lộ trình/Báo cáo (Vỡ lòng/Cơ bản/Khá).
 // Value giữ beginner/elementary/intermediate vì backend map -> pre_a1/a1/a2 (normalize_learning_level).
@@ -11,27 +11,6 @@ const englishLevelOptions = [
     { value: 'beginner', label: 'Vỡ lòng' },
     { value: 'elementary', label: 'Cơ bản' },
     { value: 'intermediate', label: 'Khá' },
-];
-
-// Cấp độ Toán giữ nhãn cũ.
-const mathLevelOptions = [
-    { value: 'auto', label: 'Tự động' },
-    { value: 'beginner', label: 'Mới bắt đầu' },
-    { value: 'elementary', label: 'Sơ cấp' },
-    { value: 'intermediate', label: 'Trung cấp' },
-];
-
-const difficultyOptions = [
-    { value: 'easy', label: 'Dễ' },
-    { value: 'medium', label: 'Trung bình' },
-    { value: 'hard', label: 'Khó' },
-];
-
-const mathOperationOptions = [
-    { value: 'add', label: 'Cộng' },
-    { value: 'subtract', label: 'Trừ' },
-    { value: 'multiply', label: 'Nhân' },
-    { value: 'divide', label: 'Chia' },
 ];
 
 const encouragementOptions = [
@@ -46,10 +25,15 @@ const languageRatioOptions = [
     { value: 'balanced', label: 'Song ngữ cân bằng' },
 ];
 
+// Giữ cấu hình đã nạp để khi LƯU vẫn round-trip các trường Toán do hệ thống kiểm soát
+// (đã ẩn khỏi UI) — không gửi null ghi đè dữ liệu hiện có của bé.
+let loadedConfig = {};
+
 export async function renderConfig(activeSection = 'goals') {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải cấu hình...</p>`;
     try {
         const config = await api.getTeachingConfig(state.currentChild.user_id);
+        loadedConfig = config || {};
         state.blockedTopicsTags = Array.isArray(config.topics_blocked) ? [...config.topics_blocked] : [];
 
         const studySchedule = config.study_schedule || { days: [], time: '19:00' };
@@ -136,21 +120,9 @@ export async function renderConfig(activeSection = 'goals') {
                                 <h2>Toán</h2>
                                 ${toggle('math_enabled', 'Kích hoạt', config.math_enabled !== false)}
                             </div>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="math_level">Cấp độ</label>
-                                    ${buildSelect('math_level', mathLevelOptions, config.math_level || 'auto')}
-                                </div>
-                                <div class="form-group">
-                                    <label for="math_difficulty">Độ khó</label>
-                                    ${buildSelect('math_difficulty', difficultyOptions, config.math_difficulty || 'medium')}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Phép tính</label>
-                                ${buildCheckboxGroup('math_ops', mathOperationOptions, config.math_operations || [])}
-                            </div>
-                            ${toggle('math_word_problems', 'Bài toán có lời', config.math_word_problems !== false)}
+                            <p class="muted" style="margin:.25rem 0 .6rem;font-size:.85rem;">
+                                📐 Cấp độ, độ khó &amp; dạng bài Toán do <strong>Lộ trình Toán</strong> (hệ thống) tự điều chỉnh theo tiến độ của bé — xem ở tab <strong>Lộ trình Toán</strong>.
+                            </p>
                             <div class="form-group">
                                 <label for="math_instruction">Hướng dẫn riêng</label>
                                 <textarea id="math_instruction" rows="3">${escapeHtml(config.math_custom_instructions || '')}</textarea>
@@ -298,9 +270,9 @@ function applyPreset(preset) {
         set('personality', 'playful');
     }
     if (preset === 'math_focus') {
+        // Nội dung Toán do Lộ trình Toán quyết định -> preset chỉ bật môn + ngôn ngữ chính.
         check('math_enabled', true);
-        setCheckedGroup('math_ops', ['add', 'subtract']);
-        check('math_word_problems', true);
+        set('language_ratio', 'vi_primary');
     }
     if (preset === 'bilingual') {
         set('language_ratio', 'balanced');
@@ -328,10 +300,12 @@ async function saveConfig(event) {
         english_level: document.getElementById('en_level').value,
         english_custom_instructions: document.getElementById('en_instruction').value,
         math_enabled: document.getElementById('math_enabled').checked,
-        math_level: document.getElementById('math_level').value,
-        math_operations: getCheckedValues('math_ops'),
-        math_difficulty: document.getElementById('math_difficulty').value,
-        math_word_problems: document.getElementById('math_word_problems').checked,
+        // Cấp độ / độ khó / phép tính Toán do Lộ trình Toán (hệ thống) quyết định — đã ẩn
+        // khỏi UI. Round-trip giá trị cũ để KHÔNG ghi đè null lên dữ liệu hiện có của bé.
+        math_level: loadedConfig.math_level || 'auto',
+        math_operations: Array.isArray(loadedConfig.math_operations) ? loadedConfig.math_operations : [],
+        math_difficulty: loadedConfig.math_difficulty || 'medium',
+        math_word_problems: loadedConfig.math_word_problems !== false,
         math_custom_instructions: document.getElementById('math_instruction').value,
         encouragement_level: document.getElementById('encouragement_level').value,
         language_ratio: document.getElementById('language_ratio').value,
@@ -360,7 +334,7 @@ function updatePreview() {
     const encouragement = selectText('encouragement_level');
     const minutes = document.getElementById('daily_limit')?.value || 30;
     const english = document.getElementById('en_enabled')?.checked ? `Tiếng Anh level ${selectText('en_level')}` : 'Tiếng Anh đang tắt';
-    const math = document.getElementById('math_enabled')?.checked ? `Toán level ${selectText('math_level')}` : 'Toán đang tắt';
+    const math = document.getElementById('math_enabled')?.checked ? 'Toán theo Lộ trình hệ thống' : 'Toán đang tắt';
     const camera = document.getElementById('camera_learning_enabled')?.checked
         ? 'Máy ảnh chỉ được dùng khi bé chủ động yêu cầu.'
         : 'Robot sẽ bỏ qua các bài học qua máy ảnh.';
@@ -381,12 +355,6 @@ function addBlockedTag() {
         updatePreview();
     }
     input.value = '';
-}
-
-function setCheckedGroup(name, values) {
-    document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
-        input.checked = values.includes(input.value);
-    });
 }
 
 function captureConfigSnapshot() {

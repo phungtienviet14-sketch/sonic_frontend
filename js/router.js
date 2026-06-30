@@ -11,6 +11,7 @@ import { renderMathRoadmap } from './components/mathRoadmap.js';
 import { renderPrivacy } from './components/privacy.js';
 import { renderConnect } from './components/connect.js';
 import { renderAccount } from './components/account.js';
+import { renderGuide } from './components/guide.js';
 import { escapeHtml, refreshIcons } from './utils.js';
 
 const CHILD_TABS = new Set(['overview']);
@@ -46,6 +47,11 @@ export async function routeCurrentPath() {
 
         if (route.type === 'account') {
             await renderAccount();
+            return;
+        }
+
+        if (route.type === 'guide') {
+            renderGuide();
             return;
         }
 
@@ -136,6 +142,7 @@ function parseRoute(pathname) {
     if (segments[0] === 'register') return { type: 'register' };
     if (segments[0] === 'dashboard') return { type: 'dashboard' };
     if (segments[0] === 'account') return { type: 'account' };
+    if (segments[0] === 'guide') return { type: 'guide' };
 
     if (segments[0] === 'children' && segments[1] === 'new') {
         return { type: 'add-child' };

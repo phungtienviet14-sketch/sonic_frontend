@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
-import { escapeHtml, refreshIcons } from '../utils.js';
+import { escapeHtml, refreshIcons, pronBand } from '../utils.js';
 
 // GĐ-Lesson — màn "Lộ trình bài học" cho phụ huynh: xem/sửa tập từ mỗi bài + 2 báo cáo.
 // docs/bai_hoc_tieng_anh_co_kiem_soat.md. Theo pattern full re-render của app.
@@ -22,13 +22,6 @@ const WORD_STATE = {
 
 function levelLabel(level) {
     return { pre_a1: 'Vỡ lòng', a1: 'Cơ bản', a2: 'Khá' }[level] || (level || '');
-}
-
-function pronBand(accuracy) {
-    if (accuracy == null) return { label: 'Chưa rõ', cls: 'is-new' };
-    if (accuracy >= 70) return { label: 'Rõ', cls: 'is-done' };
-    if (accuracy >= 50) return { label: 'Tạm', cls: 'is-learning' };
-    return { label: 'Cần luyện', cls: 'is-poor' };
 }
 
 let _data = { lessons: [], templates: [], pron: { words: [] }, vocab: { words: [] } };

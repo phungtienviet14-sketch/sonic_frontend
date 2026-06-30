@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { navigateTo, paths } from '../navigation.js';
 import { state } from '../state.js';
 import { appElement } from './auth.js';
-import { escapeHtml, refreshIcons } from '../utils.js';
+import { escapeHtml, refreshIcons, formatLevel, labelCode, masteryBand, wordStrengthBand, pronBand } from '../utils.js';
 
 const SUBJECTS = {
     english: { label: 'Tiếng Anh', className: 'english' },
@@ -12,9 +12,25 @@ const SUBJECTS = {
 export async function renderReport(activeTab = 'overview') {
     appElement.innerHTML = `<div class="loader"></div><p class="text-center">Đang tải báo cáo...</p>`;
     try {
-        const report = await api.getReport(state.currentChild.user_id);
+        const uid = state.currentChild.user_id;
+        // Tải SONG SONG: tiến độ 2 môn + 2 báo cáo nghiệp vụ (phát âm / nhớ nghĩa) +
+        // tiến độ lộ trình Anh + lộ trình Toán. Báo cáo phụ chỉ "tô thêm" — lỗi 1 nguồn
+        // không làm hỏng cả màn (catch -> rỗng).
+        const [report, pron, vocab, lessons, mathLevels] = await Promise.all([
+            api.getReport(uid),
+            api.getPronunciationReport(uid).catch(() => ({ words: [] })),
+            api.getVocabularyReport(uid).catch(() => ({ words: [] })),
+            api.getChildLessons(uid).catch(() => []),
+            api.getMathRoadmap(uid).catch(() => []),
+        ]);
         const english = report.english || {};
         const math = report.math || {};
+        const extra = {
+            pron: pron?.words || [],
+            vocab: vocab?.words || [],
+            lessons: lessons || [],
+            mathLevels: mathLevels || [],
+        };
 
         appElement.innerHTML = `
             <main class="page-shell">
@@ -36,7 +52,7 @@ export async function renderReport(activeTab = 'overview') {
                     ${reportTabButton('history', 'Lịch sử', activeTab, 'history')}
                 </nav>
 
-                ${renderReportBody(activeTab, english, math)}
+                ${renderReportBody(activeTab, english, math, extra)}
             </main>
         `;
 
@@ -66,9 +82,9 @@ export async function renderReport(activeTab = 'overview') {
     }
 }
 
-function renderReportBody(activeTab, english, math) {
-    if (activeTab === 'english') return renderSubjectTab('english', english);
-    if (activeTab === 'math') return renderSubjectTab('math', math);
+function renderReportBody(activeTab, english, math, extra = {}) {
+    if (activeTab === 'english') return renderSubjectTab('english', english, extra);
+    if (activeTab === 'math') return renderSubjectTab('math', math, extra);
     if (activeTab === 'history') return renderHistoryTab(english, math);
     return renderOverviewTab(english, math);
 }
@@ -116,7 +132,7 @@ function renderOverviewTab(english, math) {
     `;
 }
 
-function renderSubjectTab(subject, data) {
+function renderSubjectTab(subject, data, extra = {}) {
     const meta = SUBJECTS[subject];
     return `
         <section class="subject-report-grid">
@@ -132,7 +148,7 @@ function renderSubjectTab(subject, data) {
                     <div><strong>${data?.daily_summary?.attempts?.answered_attempts || 0}</strong><span>lượt làm hôm nay</span></div>
                     <div><strong>${data?.daily_summary?.attempts?.correct_attempts || 0}</strong><span>câu đúng hôm nay</span></div>
                 </div>
-                ${renderPlacementBox(data?.placement)}
+                ${subject === 'math' ? renderCurrentMathLevel(extra.mathLevels) : renderPlacementBox(data?.placement)}
             </article>
 
             <article class="surface">
@@ -145,6 +161,10 @@ function renderSubjectTab(subject, data) {
                 ${subject === 'english' ? renderWordBank(data?.word_bank) : renderMisconceptions(data?.misconceptions || [])}
             </article>
 
+            ${subject === 'english' ? renderLessonRoadmapProgress(extra.lessons) : ''}
+            ${subject === 'english' ? renderPronunciationReport(extra.pron) : ''}
+            ${subject === 'english' ? renderVocabularyReport(extra.vocab) : ''}
+
             <article class="surface">
                 <h2>Gợi ý từ hệ thống</h2>
                 <div class="recommendation-list compact-list">
@@ -153,6 +173,84 @@ function renderSubjectTab(subject, data) {
             </article>
         </section>
     `;
+}
+
+// Lộ trình Toán hệ thống: nêu cấp bé ĐANG học (đồng bộ tab "Lộ trình Toán").
+function renderCurrentMathLevel(levels = []) {
+    const active = (levels || []).find(lvl => lvl.status === 'active');
+    if (!active) {
+        const started = (levels || []).some(lvl => lvl.status === 'passed');
+        return `<div class="subject-note"><p>${started
+            ? 'Bé đã hoàn thành các cấp đầu. Mở tab Lộ trình Toán để xem chi tiết.'
+            : 'Bé chưa bắt đầu Toán. Sau buổi học đầu, hệ thống kiểm tra đầu vào và xếp cấp phù hợp.'}</p></div>`;
+    }
+    const order = Number(active.position ?? 0) + 1;
+    return `<div class="subject-note"><p><strong>Đang học — Cấp ${order}: ${escapeHtml(active.title || '')}.</strong> Cấp độ Toán do hệ thống điều chỉnh theo tiến độ của bé.</p></div>`;
+}
+
+// Tiến độ lộ trình Tiếng Anh: mỗi bài "Đã thuộc X/Y từ" (đồng bộ tab "Lộ trình Anh").
+function renderLessonRoadmapProgress(lessons = []) {
+    if (!lessons || !lessons.length) {
+        return `
+            <article class="surface">
+                <h2>Tiến độ lộ trình Tiếng Anh</h2>
+                <p class="muted compact">Bé chưa có bài học nào. Vào tab "Lộ trình Anh" để thêm chủ đề cho bé.</p>
+            </article>`;
+    }
+    return `
+        <article class="surface">
+            <h2>Tiến độ lộ trình Tiếng Anh</h2>
+            <div class="report-rows">
+                ${lessons.slice(0, 12).map(lesson => {
+                    const total = lesson.total || 0;
+                    const learned = lesson.learned || 0;
+                    const pct = total ? Math.round((learned * 100) / total) : 0;
+                    const band = total && learned >= total ? 'is-done' : (learned > 0 ? 'is-learning' : 'is-new');
+                    return `
+                        <div class="report-row">
+                            <span class="band ${band}">${total && learned >= total ? 'Hoàn thành' : (learned > 0 ? 'Đang học' : 'Chưa học')}</span>
+                            <strong>${escapeHtml(lesson.title || 'Bài học')}</strong>
+                            ${total ? `<div class="lesson-progress-bar" style="max-width:120px;"><span style="width:${pct}%"></span></div><small class="muted">${learned}/${total} từ</small>` : '<small class="muted">chưa có từ</small>'}
+                        </div>`;
+                }).join('')}
+            </div>
+        </article>`;
+}
+
+// Báo cáo điểm yếu phát âm (report-only). Đồng bộ với màn "Lộ trình Anh".
+function renderPronunciationReport(words = []) {
+    return `
+        <article class="surface">
+            <h2>Phát âm cần luyện</h2>
+            ${(words && words.length) ? `
+                <div class="report-rows">
+                    ${words.slice(0, 12).map(w => {
+                        const band = pronBand(w.avg_accuracy);
+                        return `<div class="report-row">
+                            <span class="band ${band.cls}">${band.label}</span>
+                            <strong>${escapeHtml(w.reference_word || '')}</strong>
+                            <small class="muted">đọc ${w.attempts || 0} lần</small>
+                        </div>`;
+                    }).join('')}
+                </div>` : '<p class="muted compact">Chưa có dữ liệu phát âm. Khi bé đọc theo trong bài, kết quả sẽ hiện ở đây.</p>'}
+        </article>`;
+}
+
+// Báo cáo từ bé hay quên nghĩa (sai nhiều ở câu đố nghĩa / điểm ghi nhớ thấp).
+function renderVocabularyReport(words = []) {
+    return `
+        <article class="surface">
+            <h2>Từ bé hay quên nghĩa</h2>
+            ${(words && words.length) ? `
+                <div class="report-rows">
+                    ${words.slice(0, 12).map(w => `
+                        <div class="report-row">
+                            <span class="band is-poor">Hay quên</span>
+                            <strong>${escapeHtml(w.word || '')} <small>(${escapeHtml(w.meaning_vi || '')})</small></strong>
+                            <small class="muted">${(w.meaning_wrong_count || 0) > 0 ? `sai nghĩa ${w.meaning_wrong_count} lần` : 'cần ôn lại'}</small>
+                        </div>`).join('')}
+                </div>` : '<p class="muted compact">Chưa ghi nhận từ nào bé hay quên nghĩa.</p>'}
+        </article>`;
 }
 
 function renderHistoryTab(english, math) {
@@ -193,7 +291,7 @@ function renderSubjectSummary(subject, data) {
         <div class="summary-row ${meta.className}">
             <div>
                 <strong>${meta.label}</strong>
-                <p>Cấp độ ${formatLevel(data?.level_info?.current_level)} · ${data?.level_info?.total_xp || 0} điểm XP</p>
+                <p>Cấp độ ${formatLevel(data?.level_info?.current_level)} · chuỗi ${data?.level_info?.streak_days || 0} ngày</p>
             </div>
             <div class="summary-numbers">
                 <span>${attempts.answered_attempts || 0} lượt làm</span>
@@ -268,7 +366,7 @@ function renderWordBank(wordBank = {}) {
             ${dueWords.length ? dueWords.slice(0, 10).map(word => `
                 <div class="data-row">
                     <span>${escapeHtml(word.word || '')}<small>${escapeHtml(word.meaning_vi || '')}</small></span>
-                    <span class="band ${masteryBand(word.strength_score).cls}">${masteryBand(word.strength_score).label}</span>
+                    <span class="band ${wordStrengthBand(word.strength_score).cls}">${wordStrengthBand(word.strength_score).label}</span>
                 </div>
             `).join('') : '<p class="muted compact">Chưa có từ cần ôn.</p>'}
         </div>
@@ -401,69 +499,11 @@ function reasonLabel(reason = '') {
     }[reason] || escapeHtml(reason || 'Theo tiến độ hiện tại');
 }
 
-function masteryBand(score) {
-    const s = Number(score || 0);
-    if (s >= 70) return { label: 'Tốt', cls: 'is-done' };
-    if (s >= 40) return { label: 'Khá', cls: 'is-learning' };
-    return { label: 'Cần luyện', cls: 'is-poor' };
-}
-
-function scoreLabel(score) {
-    return score === null || score === undefined ? '-' : Math.round(Number(score));
-}
-
-function formatLevel(level) {
-    const labels = {
-        auto: 'Tự động',
-        beginner: 'Mới bắt đầu',
-        elementary: 'Sơ cấp',
-        intermediate: 'Trung cấp',
-        pre_a1: 'Vỡ lòng',
-        a1: 'Cơ bản',
-        a2: 'Khá',
-    };
-    return labels[String(level || 'beginner').toLowerCase()] || String(level || 'beginner').toUpperCase();
-}
-
 function formatDate(value) {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
     return date.toLocaleDateString('vi-VN');
-}
-
-function labelCode(value) {
-    const labels = {
-        counting: 'đếm số',
-        comparison: 'so sánh',
-        addition: 'phép cộng',
-        subtraction: 'phép trừ',
-        multiplication: 'phép nhân',
-        division: 'phép chia',
-        geometry: 'hình học',
-        geometry_shapes: 'nhận biết hình',
-        time: 'xem giờ',
-        money: 'tiền và mua bán',
-        logic: 'tư duy logic',
-        logic_patterns: 'quy luật',
-        vocabulary: 'từ vựng',
-        listening: 'nghe hiểu',
-        speaking: 'nói',
-        sentence_patterns: 'mẫu câu',
-        picture_talk: 'nói theo tranh',
-        operation_confusion: 'nhầm phép tính',
-        counting_error: 'đếm sai',
-        off_by_one: 'lệch một đơn vị',
-        carry_error: 'sai nhớ khi cộng',
-        borrow_error: 'sai mượn khi trừ',
-        review_word: 'ôn từ cần nhớ',
-        repair_misconception: 'sửa lỗi hay gặp',
-        practice_skill: 'luyện kỹ năng',
-        next_lesson: 'bài tiếp theo',
-        english: 'Tiếng Anh',
-        math: 'Toán',
-    };
-    return labels[String(value || '').toLowerCase()] || String(value || 'chưa rõ');
 }
 
 function statusLabel(value) {
