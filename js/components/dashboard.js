@@ -74,9 +74,18 @@ function finalizeDashboardSummary() {
     if (alertTile) {
         alertTile.outerHTML = renderSummaryTile('Cảnh báo cần xem', alerts.length, alerts.length ? 'triangle-alert' : 'shield-check', alerts.length ? 'amber' : 'green', alerts.length ? 'Ưu tiên hôm nay' : 'Mọi thứ ổn', 'alertTileSlot');
     }
-    const cameraTile = document.getElementById('cameraTileSlot');
-    if (cameraTile) {
-        cameraTile.outerHTML = renderSummaryTile('Học qua máy ảnh', countCameraEnabled(), 'camera', 'teal', 'Đang bật', 'cameraTileSlot');
+    const learnedTile = document.getElementById('learnedTodayTileSlot');
+    if (learnedTile) {
+        const learned = countLearnedToday();
+        const total = state.childrenList.length;
+        learnedTile.outerHTML = renderSummaryTile(
+            'Bé đã học hôm nay',
+            `${learned}/${total}`,
+            learned ? 'book-open-check' : 'book-open',
+            learned ? 'green' : 'blue',
+            learned ? 'Có hoạt động hôm nay' : 'Chưa bé nào học',
+            'learnedTodayTileSlot',
+        );
     }
     if (hasFallbackOverview() && !document.querySelector('.fallback-notice')) {
         document.querySelector('.dashboard-summary')?.insertAdjacentHTML('afterend', renderFallbackNotice());
@@ -137,7 +146,7 @@ function renderDashboardShell(alerts) {
                 <section class="dashboard-summary">
                     ${renderSummaryTile('Tổng hồ sơ bé', state.childrenList.length, 'users', 'blue', 'Đang theo dõi')}
                     ${renderSummaryTile('Cảnh báo cần xem', '…', 'loader-circle', 'blue', 'Đang tổng hợp', 'alertTileSlot')}
-                    ${renderSummaryTile('Học qua máy ảnh', '…', 'camera', 'teal', 'Đang tổng hợp', 'cameraTileSlot')}
+                    ${renderSummaryTile('Bé đã học hôm nay', '…', 'loader-circle', 'blue', 'Đang tổng hợp', 'learnedTodayTileSlot')}
                 </section>
                 <div id="priorityBannerSlot"></div>
 
@@ -176,10 +185,10 @@ function renderDashboardShell(alerts) {
                 .catch(() => showToast('Không thể copy ID', 'error'));
             return;
         }
-        const nextBtn = event.target.closest('.next-lesson-btn');
-        if (nextBtn) {
+        const reportBtn = event.target.closest('.card-report-btn');
+        if (reportBtn) {
             event.stopPropagation();
-            navigateTo(nextBtn.getAttribute('data-path'));
+            navigateTo(reportBtn.getAttribute('data-path'));
             return;
         }
         const card = event.target.closest('.child-card');
@@ -455,9 +464,9 @@ function renderChildCard(child) {
                 ${alerts.slice(0, 2).map(renderAlertLine).join('')}
             </div>` : ''}
 
-            <button class="btn btn-primary next-lesson-btn" data-id="${escapeHtml(child.user_id)}" data-path="${paths.child(child.user_id, 'next')}" type="button">
-                <i data-lucide="circle-arrow-right"></i>
-                <span>Bài học tiếp theo</span>
+            <button class="btn btn-primary card-report-btn" data-id="${escapeHtml(child.user_id)}" data-path="${paths.report(child.user_id)}" type="button">
+                <i data-lucide="chart-column"></i>
+                <span>Xem báo cáo</span>
             </button>
         </article>
     `;
@@ -465,6 +474,11 @@ function renderChildCard(child) {
 
 function renderSubjectLine(subject, summary = {}) {
     const enabled = summary.enabled !== false;
+    // Toán do Lộ trình (hệ thống) điều chỉnh cấp độ -> KHÔNG hiện cấp parent-set (gây hiểu lầm).
+    // Tiếng Anh vẫn cấu hình cấp được nên giữ nhãn cấp.
+    const levelText = !enabled
+        ? 'Đang tắt'
+        : (subject === 'math' ? 'Theo lộ trình' : formatLevel(summary.level));
     return `
         <div class="subject-line ${subject}">
             <div>
@@ -472,10 +486,10 @@ function renderSubjectLine(subject, summary = {}) {
                     <span class="subject-mark">${subject === 'english' ? 'A' : '∑'}</span>
                     ${SUBJECT_LABELS[subject]}
                 </span>
-                <span class="subject-level">${enabled ? formatLevel(summary.level) : 'Đang tắt'}</span>
+                <span class="subject-level">${levelText}</span>
             </div>
             <div class="subject-stats">
-                <span>${summary.today?.answered_attempts ?? 0} lượt hôm nay</span>
+                <span>${summary.today?.correct_attempts ?? 0} câu đúng hôm nay</span>
                 <span>${summary.streak_days ?? 0} ngày liên tiếp</span>
             </div>
         </div>
@@ -545,7 +559,7 @@ function renderFallbackNotice() {
     return `
         <div class="surface fallback-notice">
             <strong>Đang dùng dữ liệu báo cáo cơ bản.</strong>
-            <p>Backend hiện tại chưa hỗ trợ tổng quan mới cho một số bé. Giao diện vẫn hoạt động, nhưng số phút học hôm nay và một vài cảnh báo có thể chưa đầy đủ.</p>
+            <p>Tạm thời chưa lấy được tổng quan đầy đủ cho một số bé (lưới an toàn). Giao diện vẫn hoạt động; số phút học hôm nay và một vài cảnh báo có thể chưa đầy đủ — thử tải lại sau giây lát.</p>
         </div>
     `;
 }
@@ -554,9 +568,15 @@ function hasFallbackOverview() {
     return Object.values(state.overviewCache).some(overview => overview?.source === 'fallback_progress_report');
 }
 
-function countCameraEnabled() {
+function countLearnedToday() {
     return Object.values(state.overviewCache)
-        .filter(overview => overview && overview.teaching_config?.camera_learning_enabled !== false)
+        .filter(overview => {
+            const subjects = overview?.subjects || {};
+            return ['english', 'math'].some(subject => {
+                const today = subjects[subject]?.today || {};
+                return (today.answered_attempts || 0) > 0 || (today.events || 0) > 0;
+            });
+        })
         .length;
 }
 
