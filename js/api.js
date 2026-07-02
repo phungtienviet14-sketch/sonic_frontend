@@ -209,6 +209,15 @@ export const api = {
         return this.request(`/children/${userId}/voiceprint/consent`, { method: 'DELETE' });
     },
 
+    // Ghi mẫu giọng bé từ trình duyệt (MediaRecorder) — gửi data URL base64,
+    // backend decode + trích đặc trưng CỤC BỘ, không lưu audio gốc.
+    enrollVoiceprintAudio(userId, audioBase64, mimeType = 'audio/webm') {
+        return this.request(`/children/${userId}/voiceprint/enroll-audio`, {
+            method: 'POST',
+            body: JSON.stringify({ audio_base64: audioBase64, mime_type: mimeType }),
+        });
+    },
+
     deleteVoiceprint(userId) {
         return this.request(`/children/${userId}/voiceprint`, { method: 'DELETE' });
     },

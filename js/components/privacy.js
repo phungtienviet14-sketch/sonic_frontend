@@ -10,6 +10,16 @@ const MEMORY_GROUPS = [
     { key: 'follow_ups', label: 'Robot sẽ hỏi thăm', icon: 'sparkles' },
 ];
 
+// Câu mẫu cho bé đọc khi ghi giọng (xoay theo số mẫu đã ghi — mỗi mẫu một câu khác
+// để đặc trưng giọng đa dạng hơn). ~5 giây đọc thong thả.
+const VOICE_SAMPLE_SENTENCES = [
+    'Xin chào Sonic, mình là bạn mới của cậu đây!',
+    'Hôm nay trời đẹp quá, mình muốn học đếm số cùng Sonic.',
+    'Một, hai, ba, bốn, năm — mình thích chơi với Sonic lắm!',
+];
+const VOICE_RECORD_SECONDS = 5;
+const VOICE_TARGET_SAMPLES = 3;
+
 export async function renderPrivacy() {
     if (!state.currentChild) {
         navigateTo(paths.dashboard(), { replace: true });
@@ -152,6 +162,14 @@ function renderVoiceCard(status) {
                 <div class="voice-enroll-state">
                     <p><i data-lucide="${enrolled ? 'circle-check-big' : 'circle-dashed'}"></i><span>${enrolled ? `Đã ghi nhận giọng (${status.sample_count} mẫu)${status.ready ? '' : ' — cần thêm mẫu để nhận diện tốt'}` : 'Chưa ghi nhận giọng nào'}</span></p>
                 </div>
+                <div class="voice-record-block">
+                    <p class="voice-sample-sentence">Khi ghi âm, bé đọc to câu này nhé:<br><strong>"${VOICE_SAMPLE_SENTENCES[(status.sample_count || 0) % VOICE_SAMPLE_SENTENCES.length]}"</strong></p>
+                    <button id="recordVoiceBtn" class="btn btn-primary" type="button">
+                        <i data-lucide="mic"></i>
+                        <span>${enrolled ? 'Ghi thêm mẫu giọng' : 'Bắt đầu ghi giọng bé'} (${status.sample_count || 0}/${VOICE_TARGET_SAMPLES})</span>
+                    </button>
+                    <p id="recordHint" class="muted compact">Mỗi mẫu ghi ~${VOICE_RECORD_SECONDS} giây. Nên ghi đủ ${VOICE_TARGET_SAMPLES} mẫu để robot nhận giọng bé tốt nhất.</p>
+                </div>
                 <div class="privacy-actions">
                     ${enrolled ? `<button id="deleteVoiceBtn" class="btn btn-outline" type="button"><i data-lucide="eraser"></i><span>Xóa dữ liệu giọng</span></button>` : ''}
                     <button id="revokeConsentBtn" class="btn btn-outline btn-danger" type="button"><i data-lucide="shield-x"></i><span>Rút đồng ý & xóa</span></button>
@@ -248,4 +266,73 @@ function bindPrivacyEvents(childId) {
             showToast(error.message, 'error');
         }
     });
+
+    document.getElementById('recordVoiceBtn')?.addEventListener('click', () => recordVoiceSample(childId));
+}
+
+// --------------------------------------------------------------------------
+// Ghi mẫu giọng bé bằng MediaRecorder — blob -> data URL base64 -> backend
+// (backend decode + trích đặc trưng CỤC BỘ; không lưu audio gốc). Cần HTTPS.
+// --------------------------------------------------------------------------
+async function recordVoiceSample(childId) {
+    const btn = document.getElementById('recordVoiceBtn');
+    const hint = document.getElementById('recordHint');
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+        showToast('Trình duyệt không hỗ trợ ghi âm — hãy dùng Chrome/Safari mới', 'error');
+        return;
+    }
+
+    let stream;
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+        showToast('Không truy cập được micro — hãy cho phép quyền micro rồi thử lại', 'error');
+        return;
+    }
+
+    // Chọn định dạng trình duyệt hỗ trợ: Chrome/Edge = webm/opus, Safari = mp4.
+    const mimeType = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+        .find(type => MediaRecorder.isTypeSupported(type)) || '';
+    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    const chunks = [];
+    recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+
+    const label = btn.querySelector('span');
+    const originalLabel = label.textContent;
+    const originalHint = hint ? hint.textContent : '';
+    btn.disabled = true;
+    let remain = VOICE_RECORD_SECONDS;
+    label.textContent = `Đang ghi... ${remain}s`;
+    if (hint) hint.textContent = 'Bé đọc to câu mẫu phía trên nhé!';
+    const ticker = setInterval(() => {
+        remain -= 1;
+        if (remain > 0) label.textContent = `Đang ghi... ${remain}s`;
+    }, 1000);
+
+    const stopped = new Promise(resolve => { recorder.onstop = resolve; });
+    recorder.start();
+    setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop(); }, VOICE_RECORD_SECONDS * 1000);
+    await stopped;
+    clearInterval(ticker);
+    stream.getTracks().forEach(track => track.stop());
+
+    label.textContent = 'Đang xử lý...';
+    try {
+        const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' });
+        if (!blob.size) throw new Error('Không thu được âm thanh — bé thử nói to hơn nhé');
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Không đọc được dữ liệu ghi âm'));
+            reader.readAsDataURL(blob);
+        });
+        const result = await api.enrollVoiceprintAudio(childId, dataUrl, blob.type);
+        showToast(`Đã ghi mẫu giọng (${result.sample_count}/${VOICE_TARGET_SAMPLES} mẫu)${result.ready ? ' — đủ để nhận diện!' : ''}`);
+        renderPrivacy();
+    } catch (error) {
+        showToast(error.message, 'error');
+        btn.disabled = false;
+        label.textContent = originalLabel;
+        if (hint) hint.textContent = originalHint;
+    }
 }
